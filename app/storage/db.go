@@ -6,8 +6,10 @@ import (
 )
 
 func SetupDb(db *gorm.DB) {
-	db.AutoMigrate(&User{}, &Message{})
-
+	err := db.AutoMigrate(&User{}, &Message{})
+	if err != nil {
+		panic("failed to migrate db")
+	}
 }
 
 func GetDb() *gorm.DB {

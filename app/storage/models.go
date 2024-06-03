@@ -6,14 +6,14 @@ import (
 
 type User struct {
 	gorm.Model
-	TgId       int64
+	TgId       int64 `gorm:"primaryKey"`
 	ChatId     int64
 	TgUsername string
 }
 
 type Message struct {
 	gorm.Model
-	TgMsgId       int64
+	TgMsgId       int64 `gorm:"primaryKey"`
 	Text          string
 	RepyToTgMsgId int64
 	ChatId        int64

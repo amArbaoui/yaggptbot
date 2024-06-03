@@ -24,6 +24,9 @@ func NewUserService(db *gorm.DB) *UserServiceImpl {
 }
 
 func (us *UserServiceImpl) ValidateTgUser(tgUser *tgbotapi.User) error {
+	if tgUser.IsBot {
+		return errors.New("bots are restricted to use this service")
+	}
 	_, err := us.rep.GetUserByTgId(tgUser.ID)
 	return err
 }
@@ -33,6 +36,9 @@ func (us *UserServiceImpl) GetUserByTgId(tgId int64) (models.User, error) {
 }
 
 func (us *UserServiceImpl) SaveUser(user models.User) error {
+	if _, err := us.GetUserByTgId(user.Id); err == nil {
+		return errors.New("user already exists")
+	}
 	return us.rep.SaveUser(user)
 }
 

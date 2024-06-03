@@ -12,12 +12,13 @@ type CompletionRequestMessage struct {
 }
 
 type OpenAiService struct {
-	openai.Client
+	Client    openai.Client
+	MaxTokens int
 }
 
-func NewOpenAiService(token string) *OpenAiService {
-	client := openai.NewClient(token)
-	return &OpenAiService{Client: *client}
+func NewOpenAiService(secretToken string, maxTokens int) *OpenAiService {
+	client := openai.NewClient(secretToken)
+	return &OpenAiService{Client: *client, MaxTokens: maxTokens}
 }
 
 func (o *OpenAiService) GetCompletionMessage(messages []CompletionRequestMessage) (string, error) {
@@ -28,8 +29,8 @@ func (o *OpenAiService) GetCompletionMessage(messages []CompletionRequestMessage
 
 	}
 	req := openai.ChatCompletionRequest{
-		Model:     openai.GPT3Dot5Turbo,
-		MaxTokens: 1000, // TODO: this should be a param
+		Model:     openai.GPT4o,
+		MaxTokens: o.MaxTokens,
 		Messages:  completionMessages,
 	}
 	resp, err := o.Client.CreateChatCompletion(ctx, req)
