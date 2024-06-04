@@ -25,7 +25,11 @@ type GPTBot struct {
 	botOptions  BotOptions
 }
 
-func NewGPTBot(tgToken string, openAiToken string, llmservice LlmService, messageService MessageService, userService UserService, botOptions BotOptions) GPTBot {
+func NewGPTBot(tgToken string,
+	llmservice LlmService,
+	messageService MessageService,
+	userService UserService,
+	botOptions BotOptions) GPTBot {
 	bot, err := tgbotapi.NewBotAPI(tgToken)
 	if err != nil {
 		log.Panic(err)
@@ -44,10 +48,9 @@ func (b *GPTBot) ListenAndServe(ctx context.Context, wg *sync.WaitGroup) {
 		select {
 		case update := <-updates:
 			if message := update.Message; update.Message != nil {
-				log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 				err := b.userService.ValidateTgUser(update.SentFrom())
 				if err != nil {
-					fmt.Printf("Got message (%s) for not authenticade user %s", update.Message.Text, update.Message.From.UserName)
+					fmt.Printf("Got message (%s) for not authenticaded user %s", update.Message.Text, update.Message.From.UserName)
 					_, _ = b.msgService.SendMessage(b.botAPI, models.Message{ChatId: update.Message.Chat.ID, RepyToId: update.Message.From.ID, Text: "You are not authenticated to use this bot"}) // should send correct message
 				} else {
 					b.handleMessage(message)

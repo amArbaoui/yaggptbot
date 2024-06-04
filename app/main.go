@@ -7,7 +7,6 @@ import (
 	"amArbaoui/yaggptbot/app/telegram"
 	"amArbaoui/yaggptbot/app/user"
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -39,14 +38,18 @@ func main() {
 		cancel()
 	}()
 
-	db := storage.GetDb()
+	db := storage.GetDB()
 	srvAddr := os.Getenv("SERV_ADDR")
 	tgToken := os.Getenv("TG_TOKEN")
 	openAiToken := os.Getenv("OPENAI_TOKEN")
 	apiKey := os.Getenv("X_API_KEY")
-	fmt.Println(srvAddr)
+	encryptionKey := os.Getenv("ENCRYPTION_KEY")
+	if encryptionKey == "" {
+		log.Fatal("Failed to obtain encryption key")
+	}
 	llmService := llm.NewOpenAiService(openAiToken, OPENAI_MAX_TOKENS)
-	msgService := telegram.NewMessageDbService(db)
+	encryptionService := storage.NewEncryptionService(encryptionKey)
+	msgService := telegram.NewMessageDbService(db, encryptionService)
 	userService := user.NewUserService(db)
 	botOptions := telegram.BotOptions{MaxConversationDepth: TG_MAX_CONVERSATION_DEPTH}
 	bot := telegram.NewGPTBot(tgToken, openAiToken, llmService, msgService, userService, botOptions)
