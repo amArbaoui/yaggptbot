@@ -15,6 +15,7 @@ import (
 
 type BotOptions struct {
 	MaxConversationDepth int
+	BotDebugEnabled      bool
 }
 
 type GPTBot struct {
@@ -34,7 +35,7 @@ func NewGPTBot(tgToken string,
 	if err != nil {
 		log.Panic(err)
 	}
-	bot.Debug = true
+	bot.Debug = botOptions.BotDebugEnabled
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	return GPTBot{botAPI: bot, llmService: llmservice, msgService: messageService, userService: userService, botOptions: botOptions}
 }
@@ -47,16 +48,14 @@ func (b *GPTBot) ListenAndServe(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case update := <-updates:
-			if message := update.Message; update.Message != nil {
-				err := b.userService.ValidateTgUser(update.SentFrom())
-				if err != nil {
-					fmt.Printf("Got message (%s) for not authenticaded user %s", update.Message.Text, update.Message.From.UserName)
-					_, _ = b.msgService.SendMessage(b.botAPI, models.Message{ChatId: update.Message.Chat.ID, RepyToId: update.Message.From.ID, Text: "You are not authenticated to use this bot"}) // should send correct message
-				} else {
-					b.handleMessage(message)
-				}
-
+			message := update.Message
+			if message == nil {
+				continue
 			}
+			if err := b.ValidateUpdate(update); err != nil {
+				continue
+			}
+			b.RespondToTextMessage(message)
 		case <-ctx.Done():
 			log.Println("shutting down bot")
 			return
@@ -64,7 +63,23 @@ func (b *GPTBot) ListenAndServe(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-func (b *GPTBot) handleMessage(m *tgbotapi.Message) {
+func (b *GPTBot) ValidateUpdate(update tgbotapi.Update) error {
+	err := b.userService.ValidateTgUser(update.SentFrom())
+	if err != nil {
+		fmt.Printf("Got message (%s) for not authenticaded user %s", update.Message.Text, update.Message.From.UserName)
+		messageText := fmt.Sprintf(
+			"Looks like you are not authenticated to use this bot. Plesae send this info to administrator:\n"+
+				"```javascript\n"+
+				`{"tg_id": "%d", "tg_username": "%s", "chat_id": %d}`+
+				"```\n",
+			update.Message.From.ID, update.Message.From.UserName, update.Message.Chat.ID)
+
+		_, _ = b.msgService.SendMessage(b.botAPI, models.Message{ChatId: update.Message.Chat.ID, RepyToId: int64(update.Message.MessageID), Text: messageText})
+	}
+	return err
+}
+
+func (b *GPTBot) RespondToTextMessage(m *tgbotapi.Message) {
 	llmCompetionRequest, err := b.getConversationChain(m)
 	if err != nil {
 		log.Println(err)
@@ -84,7 +99,8 @@ func (b *GPTBot) handleMessage(m *tgbotapi.Message) {
 	aiResp := models.Message{Id: m.Chat.ID, Text: llmResp, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "assistant"}
 	msg, err := b.msgService.SendMessage(b.botAPI, aiResp)
 	if err != nil {
-		log.Printf("failed to send ai response")
+		log.Printf("failed to send ai response, %s", err)
+		return
 	}
 	err = b.msgService.SaveMessage(&msg, "assistant")
 	if err != nil {

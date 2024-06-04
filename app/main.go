@@ -90,11 +90,11 @@ func main() {
 
 	db := storage.GetDB()
 	cnf := NewConfig()
-	llmService := llm.NewOpenAiService(cnf.openAiToken, OPENAI_MAX_TOKENS)
+	llmService := llm.NewOpenAiService(cnf.openAiToken, OpenAiMaxTokens)
 	encryptionService := storage.NewEncryptionService(cnf.encryptionKey)
 	msgService := telegram.NewMessageDbService(db, encryptionService)
 	userService := user.NewUserService(db)
-	botOptions := telegram.BotOptions{MaxConversationDepth: TG_MAX_CONVERSATION_DEPTH}
+	botOptions := telegram.BotOptions{MaxConversationDepth: MaxMessageContextDepth, BotDebugEnabled: BotDebugEnabled}
 	bot := telegram.NewGPTBot(cnf.tgToken, llmService, msgService, userService, botOptions)
 	apiServer := api.NewServer(cnf.srvAddr, cnf.apiKey, userService)
 	go bot.ListenAndServe(ctx, &wg)

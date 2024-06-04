@@ -1,6 +1,7 @@
 package main
 
 const (
-	TG_MAX_CONVERSATION_DEPTH = 30
-	OPENAI_MAX_TOKENS         = 1000
+	MaxMessageContextDepth = 30
+	OpenAiMaxTokens        = 1000
+	BotDebugEnabled        = false
 )

@@ -30,9 +30,8 @@ func (ms *MessageDbService) GetMessage(messageId int64) (models.Message, error) 
 }
 
 func (ms *MessageDbService) SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest models.Message) (tgbotapi.Message, error) {
-	parseMode := "MarkdownV2"
-	escapedText := tgbotapi.EscapeText(parseMode, SendMsgRequest.Text)
-	msgConfig := tgbotapi.NewMessage(SendMsgRequest.ChatId, escapedText)
+	parseMode := tgbotapi.ModeMarkdown
+	msgConfig := tgbotapi.NewMessage(SendMsgRequest.ChatId, SendMsgRequest.Text)
 	if SendMsgRequest.RepyToId > 0 {
 		msgConfig.ReplyToMessageID = int(SendMsgRequest.RepyToId)
 	}
