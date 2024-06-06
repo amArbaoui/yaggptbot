@@ -97,7 +97,7 @@ func main() {
 	botOptions := telegram.BotOptions{MaxConversationDepth: MaxMessageContextDepth, BotDebugEnabled: BotDebugEnabled}
 	bot := telegram.NewGPTBot(cnf.tgToken, llmService, msgService, userService, botOptions)
 	apiServer := api.NewServer(cnf.srvAddr, cnf.apiKey, userService)
-	go bot.ListenAndServe(ctx, &wg)
+	go bot.StartPolling(ctx, &wg)
 	go apiServer.Run(ctx, &wg)
 	wg.Wait()
 
