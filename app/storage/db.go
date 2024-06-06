@@ -6,7 +6,7 @@ import (
 )
 
 func GetDB() *sqlx.DB {
-	db, err := sqlx.Connect("sqlite3", "yaggptbot.db")
+	db, err := sqlx.Connect("sqlite3", "db/yaggptbot.db")
 	if err != nil {
 		panic("failed to connect database")
 	}

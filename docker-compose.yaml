@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  yaggptbot:
+    image: yaggptbot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yaggptbot
+    env_file: app/.env
+    restart: unless-stopped
+    volumes:
+      - "db:/opt/yaggptbot/db"
+    ports:
+      - "8081:8081"
+volumes:
+  db:

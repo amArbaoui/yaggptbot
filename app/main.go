@@ -17,6 +17,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const (
+	MaxMessageContextDepth = 30
+	OpenAiMaxTokens        = 1000
+	BotDebugEnabled        = false
+)
+
 type Config struct {
 	srvAddr       string
 	tgToken       string
