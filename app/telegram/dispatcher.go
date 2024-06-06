@@ -19,6 +19,16 @@ func NewDispatcher() *Dispatcher {
 	}
 }
 
+func GetUserDispatcher() *Dispatcher {
+	userDispatcher := NewDispatcher()
+	userDispatcher.RegisterHandler("command", UserComamndHandler)
+	userDispatcher.RegisterHandler("document", UserDocumentHandler)
+	userDispatcher.RegisterHandler("photo", UserPhotoHandler)
+	userDispatcher.RegisterHandler("message", UserMesasgeHandler)
+	return userDispatcher
+
+}
+
 func (d *Dispatcher) RegisterHandler(updateType string, handler BotHandler) {
 	d.handlers[updateType] = handler
 }

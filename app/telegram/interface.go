@@ -13,17 +13,17 @@ type LlmService interface { // TODO: set promt
 }
 
 type MessageService interface {
-	GetMessage(messageId int64) (models.Message, error)
-	SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest models.Message) (tgbotapi.Message, error)
+	GetMessage(messageId int64) (*models.Message, error)
+	SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest models.Message) (*tgbotapi.Message, error)
 	SaveMessage(message *tgbotapi.Message, role string) error
 }
 
 type UserService interface {
 	ValidateTgUser(tgUser *tgbotapi.User) error
-	GetUserByTgId(tgId int64) (models.User, error)
+	GetUserByTgId(tgId int64) (*models.User, error)
 }
 
 type MessageRepository interface {
-	GetMessageById(messageId int64) (storage.Message, error)
+	GetMessageById(messageId int64) (*storage.Message, error)
 	SaveMessage(message *tgbotapi.Message, role string) error
 }

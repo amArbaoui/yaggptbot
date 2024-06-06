@@ -34,7 +34,7 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 		log.Printf("failed to send ai response, %s", err)
 		return
 	}
-	err = bot.msgService.SaveMessage(&msg, "assistant")
+	err = bot.msgService.SaveMessage(msg, "assistant")
 	if err != nil {
 		log.Println(err)
 	}
@@ -43,7 +43,7 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 
 func UserComamndHandler(bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
-	resp := models.Message{Id: m.Chat.ID, Text: "I don't know any commands by now. Plese send text message to answer AI", RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "assistant"}
+	resp := models.Message{Id: m.Chat.ID, Text: "I don't support any commands by now. Plese send text message to get answer from AI", RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "assistant"}
 	_, err := bot.msgService.SendMessage(bot.botAPI, resp)
 	if err != nil {
 		log.Println(err)

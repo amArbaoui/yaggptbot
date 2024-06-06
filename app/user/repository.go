@@ -19,13 +19,13 @@ type UserDbRepository struct {
 	db *sqlx.DB
 }
 
-func (rep *UserDbRepository) GetUserByTgId(tgId int64) (models.User, error) {
+func (rep *UserDbRepository) GetUserByTgId(tgId int64) (*models.User, error) {
 	var user storage.User
 	err := rep.db.Get(&user, sqlGetUser, tgId)
 	if err != nil {
-		return models.User{}, errors.New("user not found")
+		return nil, errors.New("user not found")
 	}
-	return models.User{Id: int64(user.ID), TgName: user.TgUsername, ChatId: user.ChatId}, nil
+	return &models.User{Id: int64(user.ID), TgName: user.TgUsername, ChatId: user.ChatId}, nil
 
 }
 

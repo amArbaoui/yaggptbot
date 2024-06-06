@@ -25,7 +25,7 @@ func (us *UserServiceImpl) ValidateTgUser(tgUser *tgbotapi.User) error {
 	return err
 }
 
-func (us *UserServiceImpl) GetUserByTgId(tgId int64) (models.User, error) {
+func (us *UserServiceImpl) GetUserByTgId(tgId int64) (*models.User, error) {
 	return us.rep.GetUserByTgId(tgId)
 }
 

@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 
@@ -14,11 +15,12 @@ type BotOptions struct {
 }
 
 type GPTBot struct {
-	botAPI      *tgbotapi.BotAPI
-	llmService  LlmService
-	msgService  MessageService
-	userService UserService
-	botOptions  BotOptions
+	botAPI         *tgbotapi.BotAPI
+	llmService     LlmService
+	msgService     MessageService
+	userService    UserService
+	botOptions     BotOptions
+	userDispatcher *Dispatcher
 }
 
 func NewGPTBot(tgToken string,
@@ -32,27 +34,39 @@ func NewGPTBot(tgToken string,
 	}
 	bot.Debug = botOptions.BotDebugEnabled
 	log.Printf("Authorized on account %s", bot.Self.UserName)
-	return GPTBot{botAPI: bot, llmService: llmservice, msgService: messageService, userService: userService, botOptions: botOptions}
+	return GPTBot{botAPI: bot,
+		llmService:     llmservice,
+		msgService:     messageService,
+		userService:    userService,
+		botOptions:     botOptions,
+		userDispatcher: GetUserDispatcher()}
 }
 
 func (b *GPTBot) StartPolling(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-	userDispatcher := NewDispatcher()
-	userDispatcher.RegisterHandler("command", UserComamndHandler)
-	userDispatcher.RegisterHandler("document", UserDocumentHandler)
-	userDispatcher.RegisterHandler("photo", UserPhotoHandler)
-	userDispatcher.RegisterHandler("message", UserMesasgeHandler)
-
 	updates := b.botAPI.GetUpdatesChan(u)
 	for {
 		select {
 		case update := <-updates:
-			userDispatcher.HandleUpdate(b, &update)
+			b.Handle(&update)
 		case <-ctx.Done():
 			log.Println("shutting down bot")
 			return
 		}
+	}
+}
+
+func (b *GPTBot) Handle(update *tgbotapi.Update) {
+	if update.Message == nil {
+		fmt.Printf("ignoring update, not a message")
+		return
+	}
+	if update.Message.Chat.IsPrivate() {
+		b.userDispatcher.HandleUpdate(b, update)
+	} else {
+		fmt.Println("recieved group update, not implemented")
+
 	}
 }

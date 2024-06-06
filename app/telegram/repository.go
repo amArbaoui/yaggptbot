@@ -19,24 +19,24 @@ type MessageDbRepository struct {
 	encryptService *storage.EncryptionService
 }
 
-func (rep *MessageDbRepository) GetMessageById(messageId int64) (storage.Message, error) {
+func (rep *MessageDbRepository) GetMessageById(messageId int64) (*storage.Message, error) {
 	var msg storage.Message
 	messageNotFound := fmt.Errorf("message not found")
 	decodeError := fmt.Errorf("failed to decode message text")
 	err := rep.db.Get(&msg, sqlGetMessge, messageId)
 	if err != nil {
-		return storage.Message{}, messageNotFound
+		return nil, messageNotFound
 	}
 	decodedB64MessageText, err := storage.DecodeKeyFromString(msg.Text)
 	if err != nil {
-		return storage.Message{}, decodeError
+		return nil, decodeError
 	}
 	decodedBytes, err := rep.encryptService.Decrypt(decodedB64MessageText)
 	if err != nil {
-		return storage.Message{}, decodeError
+		return nil, decodeError
 	}
 	msg.Text = string(decodedBytes)
-	return msg, nil
+	return &msg, nil
 }
 
 func (rep *MessageDbRepository) SaveMessage(message *tgbotapi.Message, role string) error {
