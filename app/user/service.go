@@ -66,7 +66,7 @@ func (us *UserServiceImpl) SaveUser(user *models.User) error {
 
 func (us *UserServiceImpl) ValidateTgUser(tgUser *tgbotapi.User) error {
 	if tgUser.IsBot {
-		return errors.New("bots are restricted to use this service")
+		return ErrBotsNotAllowed
 	}
 	_, err := us.rep.GetUserByTgId(tgUser.ID)
 	return err

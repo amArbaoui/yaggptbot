@@ -60,7 +60,7 @@ func (b *GPTBot) ValidateUpdate(update *tgbotapi.Update) error {
 		messageText := fmt.Sprintf(
 			"Looks like you are not authenticated to use this bot. Plesae send this info to administrator:\n"+
 				"```javascript\n"+
-				`{"tg_id": "%d", "tg_username": "%s", "chat_id": %d}`+
+				`{"tg_id": %d, "tg_username": "%s", "chat_id": %d}`+
 				"```\n",
 			update.Message.From.ID, update.Message.From.UserName, update.Message.Chat.ID)
 

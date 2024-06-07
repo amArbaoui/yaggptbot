@@ -4,6 +4,7 @@ import (
 	"amArbaoui/yaggptbot/app/llm"
 	"amArbaoui/yaggptbot/app/models"
 	"errors"
+	"fmt"
 	"log"
 	"slices"
 
@@ -13,8 +14,19 @@ import (
 func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
 	llmCompetionRequest, err := bot.GetConversationChain(update.Message)
-	if err != nil {
-		log.Println(err)
+	if err != nil { // TODO:  вынести в отедльный метод?
+		if errors.Is(err, ErrMessageNotFound) {
+			errResp := models.Message{Id: m.Chat.ID,
+				Text:     "Failed to find reply message(s). Please send your question as a new message",
+				RepyToId: int64(m.MessageID),
+				ChatId:   m.Chat.ID,
+				Role:     "service"}
+			_, err := bot.msgService.SendMessage(bot.botAPI, errResp)
+			if err != nil {
+				log.Println(err)
+			}
+			return
+		}
 
 	}
 	err = bot.msgService.SaveMessage(m, "user")
@@ -76,7 +88,7 @@ func (b *GPTBot) GetConversationChain(m *tgbotapi.Message) ([]llm.CompletionRequ
 	var replyMessageId int64
 	depth := 0
 	if m.Text == "" {
-		return messageChain, errors.New("recieved empty message")
+		return messageChain, fmt.Errorf("recieved empty message")
 	}
 	messageChain = append(messageChain, llm.CompletionRequestMessage{Text: m.Text, Role: "user"})
 	if replyMessage := m.ReplyToMessage; replyMessage != nil {
@@ -85,8 +97,7 @@ func (b *GPTBot) GetConversationChain(m *tgbotapi.Message) ([]llm.CompletionRequ
 	for replyMessageId > 0 && depth < b.botOptions.MaxConversationDepth {
 		reply, err := b.msgService.GetMessage(replyMessageId)
 		if err != nil {
-			log.Println(err)
-			break
+			return nil, err
 		}
 		messageChain = append(messageChain, llm.CompletionRequestMessage{Text: reply.Text, Role: reply.Role})
 		replyMessageId = reply.RepyToId

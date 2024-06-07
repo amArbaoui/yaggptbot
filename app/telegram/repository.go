@@ -21,19 +21,17 @@ type MessageDbRepository struct {
 
 func (rep *MessageDbRepository) GetMessageById(messageId int64) (*storage.Message, error) {
 	var msg storage.Message
-	messageNotFound := fmt.Errorf("message not found")
-	decodeError := fmt.Errorf("failed to decode message text")
 	err := rep.db.Get(&msg, sqlGetMessge, messageId)
 	if err != nil {
-		return nil, messageNotFound
+		return nil, fmt.Errorf("%w: %v", ErrMessageNotFound, err)
 	}
 	decodedB64MessageText, err := storage.DecodeKeyFromString(msg.Text)
 	if err != nil {
-		return nil, decodeError
+		return nil, fmt.Errorf("%w:%v", ErrMessageNotDecoded, err)
 	}
 	decodedBytes, err := rep.encryptService.Decrypt(decodedB64MessageText)
 	if err != nil {
-		return nil, decodeError
+		return nil, fmt.Errorf("%w:%v", ErrMessageNotDecoded, err)
 	}
 	msg.Text = string(decodedBytes)
 	return &msg, nil
@@ -42,15 +40,12 @@ func (rep *MessageDbRepository) GetMessageById(messageId int64) (*storage.Messag
 func (rep *MessageDbRepository) SaveMessage(message *tgbotapi.Message, role string) error {
 	var replyTo int64
 	var newMessage storage.Message
-	failedToCreateErr := fmt.Errorf("failed to create message")
-
-	encodeError := fmt.Errorf("failed to decode message text")
 	if reply := message.ReplyToMessage; reply != nil {
 		replyTo = int64(reply.MessageID)
 	}
 	encodedMessageText, err := rep.encryptService.Encrypt([]byte(message.Text))
 	if err != nil {
-		return encodeError
+		return fmt.Errorf("%w:%v", ErrMessageNotEncoded, err)
 	}
 	b64DecodedMessageText := storage.EncodeKeyToString(encodedMessageText)
 	newMessage = storage.Message{
@@ -64,8 +59,7 @@ func (rep *MessageDbRepository) SaveMessage(message *tgbotapi.Message, role stri
 	}
 	_, err = rep.db.NamedExec(sqlSaveMessage, &newMessage)
 	if err != nil {
-		fmt.Println(err)
-		return failedToCreateErr
+		return fmt.Errorf("%w:%v", ErrMessageNotCreated, err)
 	}
 	return nil
 
