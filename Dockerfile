@@ -8,6 +8,7 @@ RUN make build
 FROM alpine:3.20
 WORKDIR /opt/yaggptbot
 EXPOSE 8080
+COPY --from=builder /opt/yaggptbot/app/storage storage
 COPY --from=builder /opt/yaggptbot/main main
 
 CMD ["./main"]

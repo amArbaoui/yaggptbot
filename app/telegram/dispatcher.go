@@ -2,35 +2,54 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/models"
+	"amArbaoui/yaggptbot/app/user"
 	"fmt"
+	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type BotHandler func(bot *GPTBot, update *tgbotapi.Update)
+type BaseHandler func(bot *GPTBot, update *tgbotapi.Update)
+type StateHandler func(bot *GPTBot, update *tgbotapi.Update)
+type Command func(bot *GPTBot, update *tgbotapi.Update)
 
 type Dispatcher struct {
-	handlers map[string]BotHandler
+	baseHandlers map[string]BaseHandler
+	stateHandler map[user.State]StateHandler
+	commands     map[string]Command
 }
 
 func NewDispatcher() *Dispatcher {
 	return &Dispatcher{
-		handlers: make(map[string]BotHandler),
+		baseHandlers: make(map[string]BaseHandler),
+		stateHandler: make(map[user.State]StateHandler),
+		commands:     make(map[string]Command),
 	}
 }
 
 func GetUserDispatcher() *Dispatcher {
 	userDispatcher := NewDispatcher()
-	userDispatcher.RegisterHandler("command", UserComamndHandler)
-	userDispatcher.RegisterHandler("document", UserDocumentHandler)
-	userDispatcher.RegisterHandler("photo", UserPhotoHandler)
-	userDispatcher.RegisterHandler("message", UserMesasgeHandler)
+	userDispatcher.RegisterBaseHandler("document", UserDocumentHandler)
+	userDispatcher.RegisterBaseHandler("photo", UserPhotoHandler)
+	userDispatcher.RegisterBaseHandler("message", UserMesasgeHandler)
+	userDispatcher.RegisterBaseHandler("message", UserMesasgeHandler)
+	userDispatcher.RegisterStateHandler(user.SETTING_PROMT, SettingPromptHandler)
+	userDispatcher.RegisterCommand("promptset", SetPromptCommand)
+	userDispatcher.RegisterCommand("promptreset", ResetPromtCommand)
 	return userDispatcher
 
 }
 
-func (d *Dispatcher) RegisterHandler(updateType string, handler BotHandler) {
-	d.handlers[updateType] = handler
+func (d *Dispatcher) RegisterBaseHandler(updateType string, handler BaseHandler) {
+	d.baseHandlers[updateType] = handler
+}
+
+func (d *Dispatcher) RegisterStateHandler(state user.State, stateHandler StateHandler) {
+	d.stateHandler[state] = stateHandler
+}
+
+func (d *Dispatcher) RegisterCommand(path string, command Command) {
+	d.commands[path] = command
 }
 
 func (d *Dispatcher) HandleUpdate(bot *GPTBot, update *tgbotapi.Update) {
@@ -39,18 +58,29 @@ func (d *Dispatcher) HandleUpdate(bot *GPTBot, update *tgbotapi.Update) {
 	}
 
 	if update.Message.IsCommand() {
-		d.handlers["command"](bot, update)
+		commandText := update.Message.Command()
+		cmd, ok := d.commands[commandText]
+		if !ok {
+			log.Printf("received unknown command, %s", commandText)
+			return
+		}
+		cmd(bot, update)
 		return
 	}
 	if update.Message.Document != nil {
-		d.handlers["document"](bot, update)
+		d.baseHandlers["document"](bot, update)
 		return
 	}
 	if update.Message.Photo != nil {
-		d.handlers["photo"](bot, update)
+		d.baseHandlers["photo"](bot, update)
 		return
 	}
-	d.handlers["message"](bot, update)
+	state, err := bot.userService.GetUserState(update.SentFrom().ID)
+	if err == nil && state != "" {
+		d.stateHandler[state](bot, update)
+		return
+	}
+	d.baseHandlers["message"](bot, update)
 }
 
 func (b *GPTBot) ValidateUpdate(update *tgbotapi.Update) error {

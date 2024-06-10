@@ -11,13 +11,12 @@ This is just a simple TG bot, allowing users to do only one thing - chat with GP
 * Holds context using TG reply to message;
 * All conversations are encrypted and stored in SQLite DB;
 * User control via WebAPI;
+* Chat completion WebAPI endpoint;
 * Small footprint - image size about 20MB;
 
 **TBD:**
-* User prompt selection;
 * Model selection;
 * Image support;
-* Chat completion WebAPI endpoint;
 
 
 
@@ -44,6 +43,10 @@ curl -X POST --header "X-API-KEY:API-KEY" host:8081/user -d '{"tg_id": 123456, "
 
 
 ## Version History
-
+* 0.1.2
+    * Add user prompts
+    * Moved migrations from Makefile to app code
+* 0.1.1 
+    * Add completion WebAPI endpoint
 * 0.1.0
     * Initial Release

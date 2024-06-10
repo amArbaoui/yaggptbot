@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	sqlGetMessge   = "select chat_id, message_id, reply_id, message_text, role, created_at, updated_at from message where message_id = $1"
+	sqlGetMessge   = "select chat_id, message_id, reply_id, message_text, role, created_at, updated_at from message where message_id = $1 and role != 'system'"
 	sqlSaveMessage = "insert into message (chat_id, message_id, reply_id, message_text, role, created_at, updated_at) values (:chat_id, :message_id, :reply_id, :message_text, :role, :created_at, :updated_at)"
 )
 

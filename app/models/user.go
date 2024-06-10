@@ -22,3 +22,8 @@ func NewUserDetails(entity *storage.User) *UserDetails {
 	usr := NewUserFromDbEntity(entity)
 	return &UserDetails{User: *usr, CreatedAt: entity.CreatedAt, UpdatedAt: entity.UpdatedAt}
 }
+
+type UserPrompt struct {
+	UserID int64
+	Prompt string
+}

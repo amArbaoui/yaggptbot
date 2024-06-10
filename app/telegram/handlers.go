@@ -3,6 +3,7 @@ package telegram
 import (
 	"amArbaoui/yaggptbot/app/llm"
 	"amArbaoui/yaggptbot/app/models"
+	"amArbaoui/yaggptbot/app/user"
 	"errors"
 	"fmt"
 	"log"
@@ -12,19 +13,13 @@ import (
 )
 
 func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
+	var promptText string
 	m := update.Message
-	llmCompetionRequest, err := bot.GetConversationChain(update.Message)
-	if err != nil { // TODO:  вынести в отедльный метод?
+	llmCompetionRequest, err := bot.GetConversationChain(m)
+	if err != nil {
 		if errors.Is(err, ErrMessageNotFound) {
-			errResp := models.Message{Id: m.Chat.ID,
-				Text:     "Failed to find reply message(s). Please send your question as a new message",
-				RepyToId: int64(m.MessageID),
-				ChatId:   m.Chat.ID,
-				Role:     "service"}
-			_, err := bot.msgService.SendMessage(bot.botAPI, errResp)
-			if err != nil {
-				log.Println(err)
-			}
+			replyText := "Failed to find reply message(s). Please send your question as a new message"
+			_ = bot.TextReply(replyText, m)
 			return
 		}
 
@@ -34,7 +29,19 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 		log.Println(err)
 	}
 
-	llmResp, err := bot.llmService.GetCompletionMessage(llmCompetionRequest)
+	prompt, err := bot.userService.GetUserPromptByTgId(update.SentFrom().ID)
+	switch err {
+	case nil:
+		promptText = prompt.Prompt
+	case user.ErrPromptNotFound:
+	default:
+		log.Println(err)
+	}
+
+	if err == nil {
+		promptText = prompt.Prompt
+	}
+	llmResp, err := bot.llmService.GetCompletionMessage(llmCompetionRequest, promptText)
 	if err != nil {
 		log.Println(err)
 
@@ -53,33 +60,17 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 
 }
 
-func UserComamndHandler(bot *GPTBot, update *tgbotapi.Update) {
-	m := update.Message
-	resp := models.Message{Id: m.Chat.ID, Text: "I don't support any commands by now. Plese send text message to get answer from AI", RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "assistant"}
-	_, err := bot.msgService.SendMessage(bot.botAPI, resp)
-	if err != nil {
-		log.Println(err)
-	}
-
-}
-
 func UserDocumentHandler(bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
-	resp := models.Message{Id: m.Chat.ID, Text: "Documents not supported", RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "assistant"}
-	_, err := bot.msgService.SendMessage(bot.botAPI, resp)
-	if err != nil {
-		log.Println(err)
-	}
+	text := "Documents not supported"
+	_ = bot.TextReply(text, m)
 
 }
 
 func UserPhotoHandler(bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
-	resp := models.Message{Id: m.Chat.ID, Text: "Photo not supported", RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "assistant"}
-	_, err := bot.msgService.SendMessage(bot.botAPI, resp)
-	if err != nil {
-		log.Println(err)
-	}
+	text := "Photo not supported"
+	bot.TextReply(text, m)
 
 }
 

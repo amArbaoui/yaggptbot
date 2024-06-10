@@ -2,4 +2,5 @@
 insert into role
 values
 ('user'),
-('assistant');
+('assistant'),
+('system');

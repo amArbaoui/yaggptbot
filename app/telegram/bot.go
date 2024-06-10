@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"amArbaoui/yaggptbot/app/models"
 	"context"
 	"fmt"
 	"log"
@@ -69,4 +70,17 @@ func (b *GPTBot) Handle(update *tgbotapi.Update) {
 		fmt.Println("recieved group update, not implemented")
 
 	}
+}
+
+func (b *GPTBot) TextReply(replyText string, m *tgbotapi.Message) error {
+	resp := models.Message{Id: m.Chat.ID,
+		Text:     replyText,
+		RepyToId: int64(m.MessageID),
+		ChatId:   m.Chat.ID,
+		Role:     "service"}
+	_, err := b.msgService.SendMessage(b.botAPI, resp)
+	if err != nil {
+		log.Println(err)
+	}
+	return err
 }

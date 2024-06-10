@@ -104,7 +104,7 @@ func (l *LlmHandler) GetCompletion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	llmReq := NewCompletionRequestMessageSlice(&completionRequestHolder)
-	resp, err := l.llmService.GetCompletionMessage(llmReq)
+	resp, err := l.llmService.GetCompletionMessage(llmReq, "")
 	if err != nil {
 		ErrorResponse(err, "failed to get completion", http.StatusUnprocessableEntity, w, r)
 		return

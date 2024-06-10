@@ -71,3 +71,56 @@ func (us *UserServiceImpl) ValidateTgUser(tgUser *tgbotapi.User) error {
 	_, err := us.rep.GetUserByTgId(tgUser.ID)
 	return err
 }
+
+func (us *UserServiceImpl) GetUserPromptByTgId(tgId int64) (*models.UserPrompt, error) {
+	user, err := us.rep.GetUserByTgId(tgId)
+	if err != nil {
+		return nil, err
+	}
+	prompt, err := us.rep.GetUserPrompt(user.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &models.UserPrompt{UserID: prompt.UserID, Prompt: *prompt.Prompt}, nil
+}
+
+func (us *UserServiceImpl) SetUserPrompt(prompt *models.UserPrompt) error {
+	return us.rep.SetUserPrompt(prompt)
+
+}
+
+func (us *UserServiceImpl) RemoveUserPromt(tgId int64) error {
+	user, err := us.rep.GetUserByTgId(tgId)
+	if err != nil {
+		return err
+	}
+	return us.rep.RemoveUserPromt(user.ID)
+
+}
+
+func (us *UserServiceImpl) GetUserState(tgId int64) (State, error) {
+	user, err := us.rep.GetUserByTgId(tgId)
+	if err != nil {
+		return "", err
+	}
+	return us.rep.GetUserState(user.ID)
+
+}
+
+func (us *UserServiceImpl) SetUserState(tgId int64, state State) error {
+	user, err := us.rep.GetUserByTgId(tgId)
+	if err != nil {
+		return err
+	}
+	return us.rep.SetUserState(user.ID, state)
+
+}
+
+func (us *UserServiceImpl) ResetUserState(tgId int64) error {
+	user, err := us.rep.GetUserByTgId(tgId)
+	if err != nil {
+		return err
+	}
+	return us.rep.ResetUserState(user.ID)
+
+}

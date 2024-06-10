@@ -10,12 +10,18 @@ import (
 )
 
 const (
-	sqlMaxUserId     = "select coalesce(max(user_id), 0) from user"
-	sqlGetUsers      = "select user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at from user"
-	sqlGetUserByTgId = "select user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at from user where tg_user_id = $1"
-	sqlSaveUser      = "insert into user (user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at) values (:user_id, :tg_user_id, :tg_chat_id, :tg_username, :created_at, :updated_at)"
-	sqlUpdateUser    = "update user set tg_username = $1, tg_chat_id = $2, updated_at = unixepoch() where tg_user_id = $3"
-	sqlDeleteUser    = "delete from user where tg_user_id = $1"
+	sqlMaxUserID        = "select coalesce(max(user_id), 0) from user"
+	sqlGetUsers         = "select user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at from user"
+	sqlGetUserByTgID    = "select user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at from user where tg_user_id = $1"
+	sqlSaveUser         = "insert into user (user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at) values (:user_id, :tg_user_id, :tg_chat_id, :tg_username, :created_at, :updated_at)"
+	sqlUpdateUser       = "update user set tg_username = $1, tg_chat_id = $2, updated_at = unixepoch() where tg_user_id = $3"
+	sqlDeleteUser       = "delete from user where tg_user_id = $1"
+	sqlGetUserPrompt    = "select  user_id, prompt, created_at, updated_at from user_prompt where user_id = $1"
+	sqlSetUserPrompt    = "insert or replace into user_prompt (user_id, prompt, created_at, updated_at) values (:user_id, :prompt, :created_at, :updated_at)"
+	sqlRemoveUserPrompt = "delete from user_prompt where user_id = $1"
+	sqlGetUserState     = "select state from user_state where user_id = $1 "
+	sqlSetUserState     = "insert into user_state (user_id, state) values ($1, $2)"
+	sqlRemoveUserState  = "delete from user_state where user_id = $1"
 )
 
 type UserDbRepository struct {
@@ -34,7 +40,7 @@ func (rep *UserDbRepository) GetUsers() ([]storage.User, error) {
 
 func (rep *UserDbRepository) GetUserByTgId(tgId int64) (*storage.User, error) {
 	var user storage.User
-	err := rep.db.Get(&user, sqlGetUserByTgId, tgId)
+	err := rep.db.Get(&user, sqlGetUserByTgID, tgId)
 	if err != nil {
 		return nil, ErrUserNotFound
 	}
@@ -45,7 +51,7 @@ func (rep *UserDbRepository) GetUserByTgId(tgId int64) (*storage.User, error) {
 func (rep *UserDbRepository) SaveUser(user *models.User) error {
 	var maxUserId int64
 	var newUser storage.User
-	err := rep.db.Get(&maxUserId, sqlMaxUserId)
+	err := rep.db.Get(&maxUserId, sqlMaxUserID)
 	if err != nil {
 		return fmt.Errorf("%w:%v", ErrUserNotCreated, err)
 	}
@@ -67,4 +73,51 @@ func (rep *UserDbRepository) UpdateUser(user *models.User) error {
 func (rep *UserDbRepository) DeleteUser(tgId int64) error {
 	_, err := rep.db.Exec(sqlDeleteUser, tgId)
 	return err
+}
+
+func (rep *UserDbRepository) GetUserPrompt(userId int64) (*storage.Prompt, error) {
+	var userPrompt storage.Prompt
+	err := rep.db.Get(&userPrompt, sqlGetUserPrompt, userId)
+	if err != nil {
+		return nil, fmt.Errorf("%w:%v", ErrPromptNotFound, err)
+	}
+	return &userPrompt, nil
+}
+
+func (rep *UserDbRepository) SetUserPrompt(prompt *models.UserPrompt) error {
+	userPrompt := storage.Prompt{UserID: prompt.UserID, Prompt: &prompt.Prompt, CreatedAt: time.Now().Unix(), UpdatedAt: nil}
+
+	_, err := rep.db.NamedExec(sqlSetUserPrompt, &userPrompt)
+	if err != nil {
+		return fmt.Errorf("%w:%v", ErrPromptNotCreated, err)
+	}
+	return nil
+}
+
+func (rep *UserDbRepository) RemoveUserPromt(userId int64) error {
+	_, err := rep.db.Exec(sqlRemoveUserPrompt, userId)
+	return err
+}
+
+func (rep *UserDbRepository) GetUserState(userId int64) (State, error) {
+	var state State
+	err := rep.db.Get(&state, sqlGetUserState, userId, state)
+	return state, err
+
+}
+
+func (rep *UserDbRepository) SetUserState(userId int64, state State) error {
+	err := rep.ResetUserState(userId)
+	if err != nil {
+		return err
+	}
+	_, err = rep.db.Exec(sqlSetUserState, userId, state)
+	return err
+
+}
+
+func (rep *UserDbRepository) ResetUserState(userId int64) error {
+	_, err := rep.db.Exec(sqlRemoveUserState, userId)
+	return err
+
 }

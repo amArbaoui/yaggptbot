@@ -19,9 +19,9 @@ type Message struct {
 	UpdatedAt     *int64 `db:"updated_at"`
 }
 
-type Promt struct {
+type Prompt struct {
 	UserID    int64   `db:"user_id"`
-	Promt     *string `db:"promt"`
+	Prompt    *string `db:"prompt"`
 	CreatedAt int64   `db:"created_at"`
 	UpdatedAt *int64  `db:"updated_at"`
 }

@@ -23,9 +23,9 @@ create table message (
     foreign key(role) references role(role)
 );
 
-create table user_promt (
+create table user_prompt (
     user_id     integer not null,
-    promt       text null,
+    prompt       text null,
     created_at  integer not null,
     updated_at  integer null,
     foreign key(user_id) references user(user_id)

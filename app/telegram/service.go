@@ -35,6 +35,9 @@ func (ms *MessageDbService) SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest 
 	}
 	msgConfig.ParseMode = parseMode
 	msg, err := botAPI.Send(msgConfig)
+	if err != nil {
+		botAPI.Send(tgbotapi.NewMessage(SendMsgRequest.ChatId, "Error, please try again"))
+	}
 	return &msg, err
 }
 
