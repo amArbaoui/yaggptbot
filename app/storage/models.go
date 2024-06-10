@@ -1,12 +1,12 @@
 package storage
 
 type User struct {
-	ID         int64  `db:"user_id"`
-	TgId       int64  `db:"tg_user_id"`
-	ChatId     int64  `db:"tg_chat_id"`
-	TgUsername string `db:"tg_username"`
-	CreatedAt  int64  `db:"created_at"`
-	UpdatedAt  *int64 `db:"updated_at"`
+	ID         int64  `db:"user_id" json:"-"`
+	TgId       int64  `db:"tg_user_id" json:"tg_id"`
+	ChatId     int64  `db:"tg_chat_id" json:"chat_id"`
+	TgUsername string `db:"tg_username" json:"tg_username"`
+	CreatedAt  int64  `db:"created_at" json:"created_at"`
+	UpdatedAt  *int64 `db:"updated_at" json:"updated_at"`
 }
 
 type Message struct {

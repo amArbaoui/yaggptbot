@@ -19,8 +19,12 @@ type MessageService interface {
 }
 
 type UserService interface {
-	ValidateTgUser(tgUser *tgbotapi.User) error
+	DeleteUser(tgId int64) error
 	GetUserByTgId(tgId int64) (*models.User, error)
+	GetUsers() ([]models.User, error)
+	GetUsersDetails() ([]models.UserDetails, error)
+	UpdateUser(*models.User) error
+	ValidateTgUser(tgUser *tgbotapi.User) error
 }
 
 type MessageRepository interface {

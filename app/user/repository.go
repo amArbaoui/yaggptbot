@@ -11,40 +11,65 @@ import (
 )
 
 const (
-	sqlGetUser  = "select user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at from user where tg_user_id = $1"
-	sqlSaveUSer = "insert into user (user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at) values (:user_id, :tg_user_id, :tg_chat_id, :tg_username, :created_at, :updated_at)"
+	sqlMaxUserId     = "select coalesce(max(user_id), 0) from user"
+	sqlGetUsers      = "select user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at from user"
+	sqlGetUserByTgId = "select user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at from user where tg_user_id = $1"
+	sqlSaveUser      = "insert into user (user_id, tg_user_id, tg_chat_id, tg_username, created_at, updated_at) values (:user_id, :tg_user_id, :tg_chat_id, :tg_username, :created_at, :updated_at)"
+	sqlUpdateUser    = "update user set tg_username = $1, tg_chat_id = $2, updated_at = unixepoch() where tg_user_id = $3"
+	sqlDeleteUser    = "delete from user where tg_user_id = $1"
 )
 
 type UserDbRepository struct {
 	db *sqlx.DB
 }
 
-func (rep *UserDbRepository) GetUserByTgId(tgId int64) (*models.User, error) {
-	var user storage.User
-	err := rep.db.Get(&user, sqlGetUser, tgId)
+func (rep *UserDbRepository) GetUsers() ([]storage.User, error) {
+	var users = []storage.User{}
+	err := rep.db.Select(&users, sqlGetUsers)
 	if err != nil {
-		return nil, errors.New("user not found")
+		return nil, errors.New("failed to get users")
 	}
-	return &models.User{Id: int64(user.ID), TgName: user.TgUsername, ChatId: user.ChatId}, nil
+	return users, nil
 
 }
 
-func (rep *UserDbRepository) SaveUser(user models.User) error {
+func (rep *UserDbRepository) GetUserByTgId(tgId int64) (*storage.User, error) {
+	var user storage.User
+	err := rep.db.Get(&user, sqlGetUserByTgId, tgId)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+	return &user, nil
+
+}
+
+func (rep *UserDbRepository) SaveUser(user *models.User) error {
 	var maxUserId int64
 	var newUser storage.User
 
 	failedToCreateErr := errors.New("failed to create user")
-	err := rep.db.Get(&maxUserId, "select coalesce(max(user_id), 0) from user")
+	err := rep.db.Get(&maxUserId, sqlMaxUserId)
 	if err != nil {
 		fmt.Println(err)
 		return failedToCreateErr
 	}
 	newUser = storage.User{ID: maxUserId + 1, TgId: user.Id, ChatId: user.ChatId, TgUsername: user.TgName, CreatedAt: time.Now().Unix(), UpdatedAt: nil}
-	_, err = rep.db.NamedExec(sqlSaveUSer, &newUser)
+	_, err = rep.db.NamedExec(sqlSaveUser, &newUser)
 	if err != nil {
 		fmt.Println(err)
 		return failedToCreateErr
 	}
 	return nil
 
+}
+
+func (rep *UserDbRepository) UpdateUser(user *models.User) error {
+	_, err := rep.db.Exec(sqlUpdateUser, user.TgName, user.ChatId, user.Id)
+	return err
+
+}
+
+func (rep *UserDbRepository) DeleteUser(tgId int64) error {
+	_, err := rep.db.Exec(sqlDeleteUser, tgId)
+	return err
 }

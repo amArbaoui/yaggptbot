@@ -1,6 +1,7 @@
 package api
 
 import (
+	"amArbaoui/yaggptbot/app/llm"
 	"amArbaoui/yaggptbot/app/user"
 	"context"
 	"errors"
@@ -16,10 +17,11 @@ type Server struct {
 	listenAddr  string
 	apiKey      string
 	userService *user.UserServiceImpl
+	llmService  *llm.OpenAiService
 }
 
-func NewServer(listenAddr string, apiKey string, userService *user.UserServiceImpl) *Server {
-	return &Server{listenAddr: listenAddr, apiKey: apiKey, userService: userService}
+func NewServer(listenAddr string, apiKey string, userService *user.UserServiceImpl, llmService *llm.OpenAiService) *Server {
+	return &Server{listenAddr: listenAddr, apiKey: apiKey, userService: userService, llmService: llmService}
 }
 
 func (s *Server) Run(ctx context.Context, wg *sync.WaitGroup) {
@@ -28,7 +30,8 @@ func (s *Server) Run(ctx context.Context, wg *sync.WaitGroup) {
 	router.Use(middleware.Logger)
 	router.Use(apiKeyAuthMiddleware(s.apiKey))
 	router.Mount("/", RootRouter())
-	router.Mount("/user", UserRouters(s.userService))
+	router.Mount("/user", UserRouter(s.userService))
+	router.Mount("/llm", LLMRouter(s.llmService))
 
 	srv := &http.Server{Addr: s.listenAddr, Handler: router}
 	go func() {
@@ -46,21 +49,4 @@ func (s *Server) Run(ctx context.Context, wg *sync.WaitGroup) {
 		log.Fatalln("failed to start server: %w", err)
 	}
 
-}
-func RootRouter() chi.Router {
-	r := chi.NewRouter()
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte("OK"))
-		if err != nil {
-			log.Printf("failed to send healthchek")
-		}
-	})
-	return r
-}
-
-func UserRouters(userService *user.UserServiceImpl) chi.Router {
-	r := chi.NewRouter()
-	userHandler := UserHandler{uservice: userService}
-	r.Post("/add", userHandler.NewUser)
-	return r
 }
