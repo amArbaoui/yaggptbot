@@ -27,11 +27,10 @@ func NewServer(listenAddr string, apiKey string, userService *user.UserServiceIm
 func (s *Server) Run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	router := chi.NewRouter()
-	router.Use(middleware.Logger)
-	router.Use(apiKeyAuthMiddleware(s.apiKey))
+	router.Use(middleware.Recoverer)
 	router.Mount("/", RootRouter())
-	router.Mount("/user", UserRouter(s.userService))
-	router.Mount("/llm", LLMRouter(s.llmService))
+	router.Mount("/user", UserRouter(s))
+	router.Mount("/llm", LLMRouter(s))
 
 	srv := &http.Server{Addr: s.listenAddr, Handler: router}
 	go func() {
