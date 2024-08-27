@@ -33,7 +33,7 @@ func GetUserDispatcher() *Dispatcher {
 	userDispatcher.RegisterBaseHandler("photo", UserPhotoHandler)
 	userDispatcher.RegisterBaseHandler("message", UserMesasgeHandler)
 	userDispatcher.RegisterBaseHandler("message", UserMesasgeHandler)
-	userDispatcher.RegisterStateHandler(user.SETTING_PROMT, SettingPromptHandler)
+	userDispatcher.RegisterStateHandler(user.SETTING_PROMT, SetPromptHandler)
 	userDispatcher.RegisterCommand("promptset", SetPromptCommand)
 	userDispatcher.RegisterCommand("promptreset", ResetPromtCommand)
 	return userDispatcher

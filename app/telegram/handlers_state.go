@@ -8,7 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func SettingPromptHandler(bot *GPTBot, update *tgbotapi.Update) {
+func SetPromptHandler(bot *GPTBot, update *tgbotapi.Update) {
 	var respText string
 	m := update.Message
 	messageText := m.Text
@@ -22,7 +22,7 @@ func SettingPromptHandler(bot *GPTBot, update *tgbotapi.Update) {
 		respText = "Please send valid prompt text"
 
 	}
-	newPrompt := fmt.Sprintf("SYSTEM_PROMPT: You should reply only in valid Telegram MarkDown V1 markup.  USER_PROMPT: %s", messageText)
+	newPrompt := fmt.Sprintf("SYSTEM_PROMPT: You should reply only in valid Telegram MarkDown V1 markup. USER_PROMPT: %s", messageText)
 	prompt := models.UserPrompt{UserID: user.Id, Prompt: newPrompt}
 	err = bot.userService.SetUserPrompt(&prompt)
 	if err != nil {

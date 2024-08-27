@@ -72,15 +72,15 @@ func (b *GPTBot) Handle(update *tgbotapi.Update) {
 	}
 }
 
-func (b *GPTBot) TextReply(replyText string, m *tgbotapi.Message) error {
+func (b *GPTBot) TextReply(replyText string, m *tgbotapi.Message) (*tgbotapi.Message, error) {
 	resp := models.Message{Id: m.Chat.ID,
 		Text:     replyText,
 		RepyToId: int64(m.MessageID),
 		ChatId:   m.Chat.ID,
 		Role:     "service"}
-	_, err := b.msgService.SendMessage(b.botAPI, resp)
+	msg, err := b.msgService.SendMessage(b.botAPI, resp)
 	if err != nil {
 		log.Println(err)
 	}
-	return err
+	return msg, err
 }

@@ -7,8 +7,9 @@ import (
 )
 
 type CompletionRequestMessage struct {
-	Text string
-	Role string
+	Text     string
+	Role     string
+	ImageUrl *string
 }
 
 type OpenAiService struct {
@@ -36,7 +37,17 @@ func (o *OpenAiService) GetCompletionMessage(messages []CompletionRequestMessage
 	completionMessages := make([]openai.ChatCompletionMessage, 0)
 	completionMessages = append(completionMessages, systemPromt)
 	for _, message := range messages {
-		completionMessages = append(completionMessages, openai.ChatCompletionMessage{Content: message.Text, Role: message.Role})
+		content := make([]openai.ChatMessagePart, 0)
+		content = append(content, openai.ChatMessagePart{Type: openai.ChatMessagePartTypeText, Text: message.Text})
+		if message.ImageUrl != nil {
+			content = append(content,
+				openai.ChatMessagePart{Type: openai.ChatMessagePartTypeImageURL,
+					ImageURL: &openai.ChatMessageImageURL{
+						URL:    *message.ImageUrl,
+						Detail: openai.ImageURLDetailAuto,
+					}})
+		}
+		completionMessages = append(completionMessages, openai.ChatCompletionMessage{MultiContent: content, Role: message.Role})
 
 	}
 	req := openai.ChatCompletionRequest{

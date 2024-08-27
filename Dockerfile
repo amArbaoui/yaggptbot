@@ -9,7 +9,7 @@ FROM alpine:3.20
 WORKDIR /opt/yaggptbot
 EXPOSE 8080
 COPY --from=builder /opt/yaggptbot/app/storage storage
-COPY --from=builder /opt/yaggptbot/db/.gitkeep db/.gitkeep
+COPY --from=builder /opt/yaggptbot/app/db/.gitkeep db/.gitkeep
 COPY --from=builder /opt/yaggptbot/main main
 
 CMD ["./main"]

@@ -15,6 +15,7 @@ type LlmService interface {
 
 type MessageService interface {
 	GetMessage(messageId int64) (*models.Message, error)
+	GetMessageChain(topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
 	SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest models.Message) (*tgbotapi.Message, error)
 	SaveMessage(message *tgbotapi.Message, role string) error
 }
@@ -36,5 +37,6 @@ type UserService interface {
 
 type MessageRepository interface {
 	GetMessageById(messageId int64) (*storage.Message, error)
+	GetMessageChain(topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
 	SaveMessage(message *tgbotapi.Message, role string) error
 }

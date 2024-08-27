@@ -37,6 +37,23 @@ func (rep *MessageDbRepository) GetMessageById(messageId int64) (*storage.Messag
 	return &msg, nil
 }
 
+func (rep *MessageDbRepository) GetMessageChain(topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
+	var replyMessageId int64
+	depth := 0
+	replyMessageId = topMessageId
+	messageChain := make([]*storage.Message, 0)
+	for replyMessageId > 0 && depth < maxConversationDepth {
+		reply, err := rep.GetMessageById(replyMessageId)
+		if err != nil {
+			return nil, err
+		}
+		messageChain = append(messageChain, reply)
+		replyMessageId = reply.RepyToTgMsgId
+		depth++
+	}
+	return messageChain, nil
+}
+
 func (rep *MessageDbRepository) SaveMessage(message *tgbotapi.Message, role string) error {
 	var replyTo int64
 	var newMessage storage.Message

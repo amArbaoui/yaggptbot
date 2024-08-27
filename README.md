@@ -14,11 +14,6 @@ This is just a simple TG bot, allowing users to do only one thing - chat with GP
 * Chat completion WebAPI endpoint;
 * Small footprint - image size about 20MB;
 
-**TBD:**
-* Model selection;
-* Image support;
-
-
 
 ## Getting Started
 
@@ -43,6 +38,8 @@ curl -X POST --header "X-API-KEY:API-KEY" host:8081/user -d '{"tg_id": 123456, "
 
 
 ## Version History
+* 0.1.3
+    * Add ability to work with images
 * 0.1.2
     * Add user prompts
     * Moved migrations from Makefile to app code

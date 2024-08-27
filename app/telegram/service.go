@@ -27,6 +27,15 @@ func (ms *MessageDbService) GetMessage(messageId int64) (*models.Message, error)
 
 }
 
+func (ms *MessageDbService) GetMessageChain(topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
+	msgChain, err := ms.rep.GetMessageChain(topMessageId, maxConversationDepth)
+	if err != nil {
+		return nil, err
+	}
+
+	return msgChain, nil
+}
+
 func (ms *MessageDbService) SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest models.Message) (*tgbotapi.Message, error) {
 	parseMode := tgbotapi.ModeMarkdown
 	msgConfig := tgbotapi.NewMessage(SendMsgRequest.ChatId, SendMsgRequest.Text)
