@@ -2,6 +2,7 @@ package api
 
 import (
 	"amArbaoui/yaggptbot/app/llm"
+	"amArbaoui/yaggptbot/app/telegram"
 	"amArbaoui/yaggptbot/app/user"
 	"context"
 	"errors"
@@ -17,11 +18,12 @@ type Server struct {
 	listenAddr  string
 	apiKey      string
 	userService *user.UserServiceImpl
+	chatService telegram.ChatService
 	llmService  *llm.OpenAiService
 }
 
-func NewServer(listenAddr string, apiKey string, userService *user.UserServiceImpl, llmService *llm.OpenAiService) *Server {
-	return &Server{listenAddr: listenAddr, apiKey: apiKey, userService: userService, llmService: llmService}
+func NewServer(listenAddr string, apiKey string, userService *user.UserServiceImpl, chatService telegram.ChatService, llmService *llm.OpenAiService) *Server {
+	return &Server{listenAddr: listenAddr, apiKey: apiKey, userService: userService, chatService: chatService, llmService: llmService}
 }
 
 func (s *Server) Run(ctx context.Context, wg *sync.WaitGroup) {

@@ -1,7 +1,6 @@
 package telegram
 
 import (
-	"amArbaoui/yaggptbot/app/models"
 	"amArbaoui/yaggptbot/app/user"
 	"fmt"
 	"log"
@@ -94,7 +93,7 @@ func (b *GPTBot) ValidateUpdate(update *tgbotapi.Update) error {
 				"```\n",
 			update.Message.From.ID, update.Message.From.UserName, update.Message.Chat.ID)
 
-		_, _ = b.msgService.SendMessage(b.botAPI, models.Message{ChatId: update.Message.Chat.ID, RepyToId: int64(update.Message.MessageID), Text: messageText})
+		_, _ = b.chatService.SendMessage(Message{ChatId: update.Message.Chat.ID, RepyToId: int64(update.Message.MessageID), Text: messageText})
 	}
 	return err
 }

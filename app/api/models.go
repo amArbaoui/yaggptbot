@@ -2,7 +2,7 @@ package api
 
 import (
 	"amArbaoui/yaggptbot/app/llm"
-	"amArbaoui/yaggptbot/app/models"
+	"amArbaoui/yaggptbot/app/user"
 )
 
 type UserRequest struct {
@@ -27,15 +27,15 @@ type CompletionRequest struct {
 	Role string `json:"role"`
 }
 
-func NewUserFromAddUserRequest(newUserRequest UserRequest) *models.User {
-	return &models.User{
+func NewUserFromAddUserRequest(newUserRequest UserRequest) *user.User {
+	return &user.User{
 		Id:     int64(newUserRequest.TgId),
 		ChatId: int64(newUserRequest.ChatId),
 		TgName: newUserRequest.TgUsername,
 	}
 }
 
-func NewUserFromUpdateUserRequest(newUserRequest UserRequest) *models.User {
+func NewUserFromUpdateUserRequest(newUserRequest UserRequest) *user.User {
 	return NewUserFromAddUserRequest(newUserRequest)
 }
 
@@ -43,7 +43,7 @@ type UserDetailsList struct {
 	Users []UserDetails `json:"users"`
 }
 
-func UserDetailsListFrom(ud []models.UserDetails) UserDetailsList {
+func UserDetailsListFrom(ud []user.UserDetails) UserDetailsList {
 	userDetails := []UserDetails{}
 	for _, userDetail := range ud {
 		userDetails = append(userDetails, *NewUserDetails(&userDetail))
@@ -52,7 +52,7 @@ func UserDetailsListFrom(ud []models.UserDetails) UserDetailsList {
 
 }
 
-func NewUserDetails(ud *models.UserDetails) *UserDetails {
+func NewUserDetails(ud *user.UserDetails) *UserDetails {
 	return &UserDetails{TgId: ud.ChatId,
 		ChatId:     ud.ChatId,
 		TgUsername: ud.TgName,

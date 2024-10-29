@@ -1,7 +1,6 @@
 package user
 
 import (
-	"amArbaoui/yaggptbot/app/models"
 	"errors"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -21,43 +20,43 @@ func (us *UserServiceImpl) DeleteUser(tgId int64) error {
 	return us.rep.DeleteUser(tgId)
 }
 
-func (us *UserServiceImpl) GetUserByTgId(tgId int64) (*models.User, error) {
+func (us *UserServiceImpl) GetUserByTgId(tgId int64) (*User, error) {
 	entity, err := us.rep.GetUserByTgId(tgId)
 	if err != nil {
 		return nil, err
 	}
-	return models.NewUserFromDbEntity(entity), nil
+	return NewUserFromDbEntity(entity), nil
 }
 
-func (us *UserServiceImpl) GetUsers() ([]models.User, error) {
-	var users []models.User
+func (us *UserServiceImpl) GetUsers() ([]User, error) {
+	var users []User
 	entities, err := us.rep.GetUsers()
 	if err != nil {
 		return users, err
 	}
 	for _, elem := range entities {
-		users = append(users, *models.NewUserFromDbEntity(&elem))
+		users = append(users, *NewUserFromDbEntity(&elem))
 	}
 	return users, nil
 }
 
-func (us *UserServiceImpl) GetUsersDetails() ([]models.UserDetails, error) {
-	var usersDetails []models.UserDetails
+func (us *UserServiceImpl) GetUsersDetails() ([]UserDetails, error) {
+	var usersDetails []UserDetails
 	entities, err := us.rep.GetUsers()
 	if err != nil {
 		return usersDetails, err
 	}
 	for _, elem := range entities {
-		usersDetails = append(usersDetails, *models.NewUserDetails(&elem))
+		usersDetails = append(usersDetails, *NewUserDetails(&elem))
 	}
 	return usersDetails, nil
 }
 
-func (us *UserServiceImpl) UpdateUser(user *models.User) error {
+func (us *UserServiceImpl) UpdateUser(user *User) error {
 	return us.rep.UpdateUser(user)
 }
 
-func (us *UserServiceImpl) SaveUser(user *models.User) error {
+func (us *UserServiceImpl) SaveUser(user *User) error {
 	if _, err := us.GetUserByTgId(user.Id); err == nil {
 		return errors.New("user already exists")
 	}
@@ -72,7 +71,7 @@ func (us *UserServiceImpl) ValidateTgUser(tgUser *tgbotapi.User) error {
 	return err
 }
 
-func (us *UserServiceImpl) GetUserPromptByTgId(tgId int64) (*models.UserPrompt, error) {
+func (us *UserServiceImpl) GetUserPromptByTgId(tgId int64) (*UserPrompt, error) {
 	user, err := us.rep.GetUserByTgId(tgId)
 	if err != nil {
 		return nil, err
@@ -81,10 +80,10 @@ func (us *UserServiceImpl) GetUserPromptByTgId(tgId int64) (*models.UserPrompt, 
 	if err != nil {
 		return nil, err
 	}
-	return &models.UserPrompt{UserID: prompt.UserID, Prompt: *prompt.Prompt}, nil
+	return &UserPrompt{UserID: prompt.UserID, Prompt: *prompt.Prompt}, nil
 }
 
-func (us *UserServiceImpl) SetUserPrompt(prompt *models.UserPrompt) error {
+func (us *UserServiceImpl) SetUserPrompt(prompt *UserPrompt) error {
 	return us.rep.SetUserPrompt(prompt)
 
 }

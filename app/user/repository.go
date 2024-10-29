@@ -1,7 +1,6 @@
 package user
 
 import (
-	"amArbaoui/yaggptbot/app/models"
 	"amArbaoui/yaggptbot/app/storage"
 	"fmt"
 	"time"
@@ -48,7 +47,7 @@ func (rep *UserDbRepository) GetUserByTgId(tgId int64) (*storage.User, error) {
 
 }
 
-func (rep *UserDbRepository) SaveUser(user *models.User) error {
+func (rep *UserDbRepository) SaveUser(user *User) error {
 	var maxUserId int64
 	var newUser storage.User
 	err := rep.db.Get(&maxUserId, sqlMaxUserID)
@@ -64,7 +63,7 @@ func (rep *UserDbRepository) SaveUser(user *models.User) error {
 
 }
 
-func (rep *UserDbRepository) UpdateUser(user *models.User) error {
+func (rep *UserDbRepository) UpdateUser(user *User) error {
 	_, err := rep.db.Exec(sqlUpdateUser, user.TgName, user.ChatId, user.Id)
 	return err
 
@@ -84,7 +83,7 @@ func (rep *UserDbRepository) GetUserPrompt(userId int64) (*storage.Prompt, error
 	return &userPrompt, nil
 }
 
-func (rep *UserDbRepository) SetUserPrompt(prompt *models.UserPrompt) error {
+func (rep *UserDbRepository) SetUserPrompt(prompt *UserPrompt) error {
 	userPrompt := storage.Prompt{UserID: prompt.UserID, Prompt: &prompt.Prompt, CreatedAt: time.Now().Unix(), UpdatedAt: nil}
 
 	_, err := rep.db.NamedExec(sqlSetUserPrompt, &userPrompt)

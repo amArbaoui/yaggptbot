@@ -1,7 +1,8 @@
 package telegram
 
 import (
-	"amArbaoui/yaggptbot/app/models"
+	"amArbaoui/yaggptbot/app/user"
+
 	"fmt"
 	"log"
 
@@ -13,7 +14,7 @@ func SetPromptHandler(bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
 	messageText := m.Text
 	tgId := update.SentFrom().ID
-	user, err := bot.userService.GetUserByTgId(tgId)
+	u, err := bot.userService.GetUserByTgId(tgId)
 	if err != nil {
 		log.Printf("failed to get user %v", err)
 		return
@@ -23,7 +24,7 @@ func SetPromptHandler(bot *GPTBot, update *tgbotapi.Update) {
 
 	}
 	newPrompt := fmt.Sprintf("SYSTEM_PROMPT: You should reply only in valid Telegram MarkDown V1 markup. USER_PROMPT: %s", messageText)
-	prompt := models.UserPrompt{UserID: user.Id, Prompt: newPrompt}
+	prompt := user.UserPrompt{UserID: u.Id, Prompt: newPrompt}
 	err = bot.userService.SetUserPrompt(&prompt)
 	if err != nil {
 		respText = "Error, failed to set new prompt. Please try again"
@@ -33,6 +34,6 @@ func SetPromptHandler(bot *GPTBot, update *tgbotapi.Update) {
 		respText = "Prompt updated"
 		bot.userService.ResetUserState(tgId)
 	}
-	reply := models.Message{Id: m.Chat.ID, Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "system"}
-	bot.msgService.SendMessage(bot.botAPI, reply)
+	reply := Message{Id: m.Chat.ID, Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "system"}
+	bot.chatService.SendMessage(reply)
 }

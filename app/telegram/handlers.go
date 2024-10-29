@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/llm"
-	"amArbaoui/yaggptbot/app/models"
 	"amArbaoui/yaggptbot/app/user"
 	"errors"
 	"log"
@@ -46,8 +45,8 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 
 	}
 
-	aiResp := models.Message{Id: m.Chat.ID, Text: llmResp, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "assistant"}
-	msg, err := bot.msgService.SendMessage(bot.botAPI, aiResp)
+	aiResp := Message{Id: m.Chat.ID, Text: llmResp, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "assistant"}
+	msg, err := bot.chatService.SendMessage(aiResp)
 	if err != nil {
 		log.Printf("failed to send ai response, %s", err)
 		return

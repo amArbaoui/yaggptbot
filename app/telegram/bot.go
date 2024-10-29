@@ -1,7 +1,6 @@
 package telegram
 
 import (
-	"amArbaoui/yaggptbot/app/models"
 	"context"
 	"fmt"
 	"log"
@@ -17,6 +16,7 @@ type BotOptions struct {
 
 type GPTBot struct {
 	botAPI         *tgbotapi.BotAPI
+	chatService    ChatService
 	llmService     LlmService
 	msgService     MessageService
 	userService    UserService
@@ -24,18 +24,14 @@ type GPTBot struct {
 	userDispatcher *Dispatcher
 }
 
-func NewGPTBot(tgToken string,
+func NewGPTBot(botApi *tgbotapi.BotAPI,
+	chatService ChatService,
 	llmservice LlmService,
 	messageService MessageService,
 	userService UserService,
 	botOptions BotOptions) GPTBot {
-	bot, err := tgbotapi.NewBotAPI(tgToken)
-	if err != nil {
-		log.Panic(err)
-	}
-	bot.Debug = botOptions.BotDebugEnabled
-	log.Printf("Authorized on account %s", bot.Self.UserName)
-	return GPTBot{botAPI: bot,
+	return GPTBot{botAPI: botApi,
+		chatService:    chatService,
 		llmService:     llmservice,
 		msgService:     messageService,
 		userService:    userService,
@@ -73,12 +69,12 @@ func (b *GPTBot) Handle(update *tgbotapi.Update) {
 }
 
 func (b *GPTBot) TextReply(replyText string, m *tgbotapi.Message) (*tgbotapi.Message, error) {
-	resp := models.Message{Id: m.Chat.ID,
+	resp := Message{Id: m.Chat.ID,
 		Text:     replyText,
 		RepyToId: int64(m.MessageID),
 		ChatId:   m.Chat.ID,
 		Role:     "service"}
-	msg, err := b.msgService.SendMessage(b.botAPI, resp)
+	msg, err := b.chatService.SendMessage(resp)
 	if err != nil {
 		log.Println(err)
 	}

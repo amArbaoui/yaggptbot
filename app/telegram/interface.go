@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/llm"
-	"amArbaoui/yaggptbot/app/models"
 	"amArbaoui/yaggptbot/app/storage"
 	"amArbaoui/yaggptbot/app/user"
 
@@ -14,21 +13,24 @@ type LlmService interface {
 }
 
 type MessageService interface {
-	GetMessage(messageId int64) (*models.Message, error)
+	GetMessage(messageId int64) (*Message, error)
 	GetMessageChain(topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
-	SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest models.Message) (*tgbotapi.Message, error)
 	SaveMessage(message *tgbotapi.Message, role string) error
+}
+
+type ChatService interface {
+	SendMessage(SendMsgRequest Message) (*tgbotapi.Message, error)
 }
 
 type UserService interface {
 	DeleteUser(tgId int64) error
-	GetUserByTgId(tgId int64) (*models.User, error)
-	GetUsers() ([]models.User, error)
-	GetUsersDetails() ([]models.UserDetails, error)
-	GetUserPromptByTgId(tgId int64) (*models.UserPrompt, error)
+	GetUserByTgId(tgId int64) (*user.User, error)
+	GetUsers() ([]user.User, error)
+	GetUsersDetails() ([]user.UserDetails, error)
+	GetUserPromptByTgId(tgId int64) (*user.UserPrompt, error)
 	RemoveUserPromt(tg_id int64) error
-	SetUserPrompt(prompt *models.UserPrompt) error
-	UpdateUser(*models.User) error
+	SetUserPrompt(prompt *user.UserPrompt) error
+	UpdateUser(*user.User) error
 	ValidateTgUser(tgUser *tgbotapi.User) error
 	GetUserState(tgId int64) (user.State, error)
 	SetUserState(tgId int64, state user.State) error

@@ -1,7 +1,6 @@
 package telegram
 
 import (
-	"amArbaoui/yaggptbot/app/models"
 	"amArbaoui/yaggptbot/app/storage"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -17,13 +16,13 @@ func NewMessageDbService(db *sqlx.DB, encryptService *storage.EncryptionService)
 	return &MessageDbService{rep: &repository}
 }
 
-func (ms *MessageDbService) GetMessage(messageId int64) (*models.Message, error) {
+func (ms *MessageDbService) GetMessage(messageId int64) (*Message, error) {
 	msg, err := ms.rep.GetMessageById(messageId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.Message{Id: msg.TgMsgId, Text: msg.Text, RepyToId: msg.RepyToTgMsgId, ChatId: msg.ChatId, Role: msg.Role}, nil
+	return &Message{Id: msg.TgMsgId, Text: msg.Text, RepyToId: msg.RepyToTgMsgId, ChatId: msg.ChatId, Role: msg.Role}, nil
 
 }
 
@@ -36,7 +35,7 @@ func (ms *MessageDbService) GetMessageChain(topMessageId int64, maxConversationD
 	return msgChain, nil
 }
 
-func (ms *MessageDbService) SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest models.Message) (*tgbotapi.Message, error) {
+func (ms *MessageDbService) SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest Message) (*tgbotapi.Message, error) {
 	parseMode := tgbotapi.ModeMarkdown
 	msgConfig := tgbotapi.NewMessage(SendMsgRequest.ChatId, SendMsgRequest.Text)
 	if SendMsgRequest.RepyToId > 0 {
@@ -53,4 +52,26 @@ func (ms *MessageDbService) SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest 
 func (ms *MessageDbService) SaveMessage(message *tgbotapi.Message, role string) error {
 	return ms.rep.SaveMessage(message, role)
 
+}
+
+type ChatServiceImpl struct {
+	botApi *tgbotapi.BotAPI
+}
+
+func NewChatService(botApi *tgbotapi.BotAPI) *ChatServiceImpl {
+	return &ChatServiceImpl{botApi: botApi}
+}
+
+func (ch *ChatServiceImpl) SendMessage(SendMsgRequest Message) (*tgbotapi.Message, error) {
+	parseMode := tgbotapi.ModeMarkdown
+	msgConfig := tgbotapi.NewMessage(SendMsgRequest.ChatId, SendMsgRequest.Text)
+	if SendMsgRequest.RepyToId > 0 {
+		msgConfig.ReplyToMessageID = int(SendMsgRequest.RepyToId)
+	}
+	msgConfig.ParseMode = parseMode
+	msg, err := ch.botApi.Send(msgConfig)
+	if err != nil {
+		ch.botApi.Send(tgbotapi.NewMessage(SendMsgRequest.ChatId, "Error, please try again"))
+	}
+	return &msg, err
 }

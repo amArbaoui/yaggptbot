@@ -14,6 +14,7 @@ import (
 	"sync"
 	"syscall"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 )
 
@@ -106,13 +107,19 @@ func main() {
 
 	db := storage.GetDB()
 	cnf := NewConfig()
-	llmService := llm.NewOpenAiService(cnf.openAiToken, OpenAiMaxTokens, DefaultPromt)
 	encryptionService := storage.NewEncryptionService(cnf.encryptionKey)
+	botApi, err := tgbotapi.NewBotAPI(cnf.tgToken)
+	if err != nil {
+		log.Panic(err)
+	}
+
 	msgService := telegram.NewMessageDbService(db, encryptionService)
+	chatService := telegram.NewChatService(botApi)
+	llmService := llm.NewOpenAiService(cnf.openAiToken, OpenAiMaxTokens, DefaultPromt)
 	userService := user.NewUserService(db)
 	botOptions := telegram.BotOptions{MaxConversationDepth: MaxMessageContextDepth, BotDebugEnabled: BotDebugEnabled}
-	bot := telegram.NewGPTBot(cnf.tgToken, llmService, msgService, userService, botOptions)
-	apiServer := api.NewServer(cnf.srvAddr, cnf.apiKey, userService, llmService)
+	bot := telegram.NewGPTBot(botApi, chatService, llmService, msgService, userService, botOptions)
+	apiServer := api.NewServer(cnf.srvAddr, cnf.apiKey, userService, chatService, llmService)
 	go bot.StartPolling(ctx, &wg)
 	go apiServer.Run(ctx, &wg)
 	wg.Wait()

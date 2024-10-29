@@ -2,6 +2,7 @@ package api
 
 import (
 	"amArbaoui/yaggptbot/app/llm"
+	"amArbaoui/yaggptbot/app/telegram"
 	"amArbaoui/yaggptbot/app/user"
 	"encoding/json"
 	"fmt"
@@ -12,7 +13,8 @@ import (
 )
 
 type UserHandler struct {
-	uservice *user.UserServiceImpl
+	uservice    *user.UserServiceImpl
+	chatService telegram.ChatService
 }
 
 func (usr *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {

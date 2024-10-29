@@ -23,7 +23,7 @@ func UserRouter(s *Server) chi.Router {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(apiKeyAuthMiddleware(s.apiKey))
-	userHandler := UserHandler{uservice: s.userService}
+	userHandler := UserHandler{uservice: s.userService, chatService: s.chatService}
 	r.Get("/", userHandler.GetUsers)
 	r.Post("/", userHandler.CreateUser)
 	r.Delete("/{TgId}", userHandler.DeleteUser)
