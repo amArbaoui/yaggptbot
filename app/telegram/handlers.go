@@ -45,7 +45,7 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 
 	}
 
-	aiResp := Message{Id: m.Chat.ID, Text: llmResp, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "assistant"}
+	aiResp := MessageOut{Text: llmResp, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
 	msg, err := bot.chatService.SendMessage(aiResp)
 	if err != nil {
 		log.Printf("failed to send ai response, %s", err)

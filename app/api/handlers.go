@@ -1,6 +1,7 @@
 package api
 
 import (
+	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/llm"
 	"amArbaoui/yaggptbot/app/telegram"
 	"amArbaoui/yaggptbot/app/user"
@@ -8,6 +9,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -19,6 +22,7 @@ type UserHandler struct {
 
 func (usr *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var newUserRequest UserRequest
+	silent := r.URL.Query().Get("silent")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(&newUserRequest)
@@ -34,6 +38,9 @@ func (usr *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "user %s created\n", newUserRequest.TgUsername)
+	if silent != "true" {
+		usr.greetUser(newUserRequest)
+	}
 
 }
 
@@ -90,6 +97,30 @@ func (usr *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "user with tgId %s deleted\n", tgIdText)
+}
+
+func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
+	_, err := usr.chatService.SendMessage(
+		telegram.MessageOut{
+			Text:     tgbotapi.EscapeText("Markdown", config.GreetUserMessage),
+			ChatId:   int64(newUserRequest.ChatId),
+			RepyToId: 0,
+		},
+	)
+	if err != nil {
+		fmt.Printf("[WARN] failed to send greeting message to %f due to %s", newUserRequest.TgId, err)
+	}
+	_, err = usr.chatService.SendMessage(
+		telegram.MessageOut{
+			Text:     tgbotapi.EscapeText("Markdown", config.HowToUseItMessage),
+			ChatId:   int64(newUserRequest.ChatId),
+			RepyToId: 0,
+		},
+	)
+	if err != nil {
+		fmt.Printf("[WARN] failed to send usage message to %f due to %s", newUserRequest.TgId, err)
+	}
+
 }
 
 type LlmHandler struct {

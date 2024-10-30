@@ -34,6 +34,6 @@ func SetPromptHandler(bot *GPTBot, update *tgbotapi.Update) {
 		respText = "Prompt updated"
 		bot.userService.ResetUserState(tgId)
 	}
-	reply := Message{Id: m.Chat.ID, Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "system"}
+	reply := MessageOut{Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
 	bot.chatService.SendMessage(reply)
 }

@@ -17,7 +17,7 @@ func SetPromptCommand(bot *GPTBot, update *tgbotapi.Update) {
 	} else {
 		respText = fmt.Sprintf("Current prompt is: %s\nPlease set new prompt", currentPrompt.Prompt)
 	}
-	resp := Message{Id: m.Chat.ID, Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "system"}
+	resp := MessageOut{Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
 	err = bot.userService.SetUserState(m.From.ID, user.SETTING_PROMT)
 	if err != nil {
 		log.Printf("failed to set state %v", err)
@@ -29,7 +29,7 @@ func SetPromptCommand(bot *GPTBot, update *tgbotapi.Update) {
 func ResetPromtCommand(bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
 	respText := "Prompt removed"
-	resp := Message{Id: m.Chat.ID, Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID, Role: "system"}
+	resp := MessageOut{Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
 	err := bot.userService.RemoveUserPromt(m.From.ID)
 	if err != nil {
 		log.Printf("failed to remove prompt %v", err)

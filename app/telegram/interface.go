@@ -19,7 +19,7 @@ type MessageService interface {
 }
 
 type ChatService interface {
-	SendMessage(SendMsgRequest Message) (*tgbotapi.Message, error)
+	SendMessage(SendMsgRequest MessageOut) (*tgbotapi.Message, error)
 }
 
 type UserService interface {

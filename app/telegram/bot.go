@@ -69,11 +69,10 @@ func (b *GPTBot) Handle(update *tgbotapi.Update) {
 }
 
 func (b *GPTBot) TextReply(replyText string, m *tgbotapi.Message) (*tgbotapi.Message, error) {
-	resp := Message{Id: m.Chat.ID,
+	resp := MessageOut{
 		Text:     replyText,
 		RepyToId: int64(m.MessageID),
-		ChatId:   m.Chat.ID,
-		Role:     "service"}
+		ChatId:   m.Chat.ID}
 	msg, err := b.chatService.SendMessage(resp)
 	if err != nil {
 		log.Println(err)

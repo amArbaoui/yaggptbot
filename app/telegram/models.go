@@ -7,3 +7,9 @@ type Message struct {
 	ChatId   int64
 	Role     string
 }
+
+type MessageOut struct {
+	Text     string
+	RepyToId int64
+	ChatId   int64
+}

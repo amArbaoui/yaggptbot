@@ -62,7 +62,7 @@ func NewChatService(botApi *tgbotapi.BotAPI) *ChatServiceImpl {
 	return &ChatServiceImpl{botApi: botApi}
 }
 
-func (ch *ChatServiceImpl) SendMessage(SendMsgRequest Message) (*tgbotapi.Message, error) {
+func (ch *ChatServiceImpl) SendMessage(SendMsgRequest MessageOut) (*tgbotapi.Message, error) {
 	parseMode := tgbotapi.ModeMarkdown
 	msgConfig := tgbotapi.NewMessage(SendMsgRequest.ChatId, SendMsgRequest.Text)
 	if SendMsgRequest.RepyToId > 0 {
