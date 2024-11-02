@@ -31,7 +31,6 @@ func GetUserDispatcher() *Dispatcher {
 	userDispatcher.RegisterBaseHandler("document", UserDocumentHandler)
 	userDispatcher.RegisterBaseHandler("photo", UserPhotoHandler)
 	userDispatcher.RegisterBaseHandler("message", UserMesasgeHandler)
-	userDispatcher.RegisterBaseHandler("message", UserMesasgeHandler)
 	userDispatcher.RegisterStateHandler(user.SETTING_PROMT, SetPromptHandler)
 	userDispatcher.RegisterCommand("promptset", SetPromptCommand)
 	userDispatcher.RegisterCommand("promptreset", ResetPromtCommand)
@@ -85,7 +84,7 @@ func (d *Dispatcher) HandleUpdate(bot *GPTBot, update *tgbotapi.Update) {
 func (b *GPTBot) ValidateUpdate(update *tgbotapi.Update) error {
 	err := b.userService.ValidateTgUser(update.SentFrom())
 	if err != nil {
-		fmt.Printf("Got message (%s) for not authenticaded user %s", update.Message.Text, update.Message.From.UserName)
+		log.Printf("Got message (%s) for not authenticaded user %s", update.Message.Text, update.Message.From.UserName)
 		messageText := fmt.Sprintf(
 			"Looks like you are not authenticated to use this bot. Plesae send this info to administrator:\n"+
 				"```javascript\n"+

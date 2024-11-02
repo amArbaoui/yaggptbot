@@ -7,6 +7,7 @@ import (
 	"amArbaoui/yaggptbot/app/user"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -108,7 +109,7 @@ func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
 		},
 	)
 	if err != nil {
-		fmt.Printf("[WARN] failed to send greeting message to %f due to %s", newUserRequest.TgId, err)
+		log.Printf("[WARN] failed to send greeting message to %f due to %s", newUserRequest.TgId, err)
 	}
 	_, err = usr.chatService.SendMessage(
 		telegram.MessageOut{
@@ -118,7 +119,7 @@ func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
 		},
 	)
 	if err != nil {
-		fmt.Printf("[WARN] failed to send usage message to %f due to %s", newUserRequest.TgId, err)
+		log.Printf("[WARN] failed to send usage message to %f due to %s", newUserRequest.TgId, err)
 	}
 
 }
@@ -148,6 +149,6 @@ func (l *LlmHandler) GetCompletion(w http.ResponseWriter, r *http.Request) {
 }
 
 func ErrorResponse(err error, errMsg string, status int, w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("%s, %s\n", errMsg, err)
+	log.Printf("%s, %s\n", errMsg, err)
 	http.Error(w, errMsg, http.StatusInternalServerError)
 }

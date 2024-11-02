@@ -35,20 +35,6 @@ func (ms *MessageDbService) GetMessageChain(topMessageId int64, maxConversationD
 	return msgChain, nil
 }
 
-func (ms *MessageDbService) SendMessage(botAPI *tgbotapi.BotAPI, SendMsgRequest Message) (*tgbotapi.Message, error) {
-	parseMode := tgbotapi.ModeMarkdown
-	msgConfig := tgbotapi.NewMessage(SendMsgRequest.ChatId, SendMsgRequest.Text)
-	if SendMsgRequest.RepyToId > 0 {
-		msgConfig.ReplyToMessageID = int(SendMsgRequest.RepyToId)
-	}
-	msgConfig.ParseMode = parseMode
-	msg, err := botAPI.Send(msgConfig)
-	if err != nil {
-		botAPI.Send(tgbotapi.NewMessage(SendMsgRequest.ChatId, "Error, please try again"))
-	}
-	return &msg, err
-}
-
 func (ms *MessageDbService) SaveMessage(message *tgbotapi.Message, role string) error {
 	return ms.rep.SaveMessage(message, role)
 

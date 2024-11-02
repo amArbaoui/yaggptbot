@@ -78,7 +78,7 @@ func (us *UserServiceImpl) GetUserPromptByTgId(tgId int64) (*UserPrompt, error) 
 	}
 	prompt, err := us.rep.GetUserPrompt(user.ID)
 	if err != nil {
-		return nil, err
+		return nil, ErrPromptNotFound
 	}
 	return &UserPrompt{UserID: prompt.UserID, Prompt: *prompt.Prompt}, nil
 }

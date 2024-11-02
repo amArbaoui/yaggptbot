@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 
@@ -57,13 +56,13 @@ func (b *GPTBot) StartPolling(ctx context.Context, wg *sync.WaitGroup) {
 
 func (b *GPTBot) Handle(update *tgbotapi.Update) {
 	if update.Message == nil {
-		fmt.Printf("ignoring update, not a message")
+		log.Printf("ignoring update, not a message")
 		return
 	}
 	if update.Message.Chat.IsPrivate() {
 		b.userDispatcher.HandleUpdate(b, update)
 	} else {
-		fmt.Println("recieved group update, not implemented")
+		log.Println("recieved group update, not implemented")
 
 	}
 }

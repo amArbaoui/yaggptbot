@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"log"
 )
 
 type EncryptionService struct {
@@ -25,7 +26,7 @@ func NewEncryptionService(encryptionKey string) *EncryptionService {
 func (e *EncryptionService) Encrypt(data []byte) ([]byte, error) {
 	block, err := aes.NewCipher(e.encryptionKey)
 	if err != nil {
-		fmt.Printf("failed to encrypt data, %s", err)
+		log.Printf("failed to encrypt data, %s", err)
 		return nil, err
 	}
 	cipherData := make([]byte, aes.BlockSize+len(data))
@@ -34,7 +35,7 @@ func (e *EncryptionService) Encrypt(data []byte) ([]byte, error) {
 
 	// See https://gist.github.com/josephspurrier/12cc5ed76d2228a41ceb
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		fmt.Printf("failed to encrypt data, %s", err)
+		log.Printf("failed to encrypt data, %s", err)
 		return nil, err
 	}
 	stream := cipher.NewCFBEncrypter(block, iv)
@@ -51,7 +52,7 @@ func (e *EncryptionService) Decrypt(data []byte) ([]byte, error) {
 	}
 	if len(data) < aes.BlockSize {
 		err = fmt.Errorf("text is too short")
-		fmt.Printf("failed to decrypt, %s", err)
+		log.Printf("failed to decrypt, %s", err)
 		return nil, err
 	}
 

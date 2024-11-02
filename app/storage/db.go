@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	dbPath        = "db/yaggptbot.db"
-	migrationPath = "storage/migrations"
+	DbPath        = "db/yaggptbot.db"
+	MigrationPath = "storage/migrations"
 )
 
 func GetDB() *sqlx.DB {
-	db, err := sqlx.Connect("sqlite3", dbPath)
+	db, err := sqlx.Connect("sqlite3", DbPath)
 	if err != nil {
 		log.Fatalf("failed to connect database %v", err)
 	}
@@ -35,7 +35,7 @@ func runMigrations(db *sqlx.DB) error {
 		return err
 	}
 	m, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file://%s", migrationPath),
+		fmt.Sprintf("file://%s", MigrationPath),
 		"ql", driver,
 	)
 	if err != nil {
