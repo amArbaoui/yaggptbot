@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/user"
-	"fmt"
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -28,10 +27,12 @@ func NewDispatcher() *Dispatcher {
 
 func GetUserDispatcher() *Dispatcher {
 	userDispatcher := NewDispatcher()
+	userDispatcher.RegisterBaseHandler("callback", CallbackHandler)
 	userDispatcher.RegisterBaseHandler("document", UserDocumentHandler)
 	userDispatcher.RegisterBaseHandler("photo", UserPhotoHandler)
 	userDispatcher.RegisterBaseHandler("message", UserMesasgeHandler)
 	userDispatcher.RegisterStateHandler(user.SETTING_PROMT, SetPromptHandler)
+	userDispatcher.RegisterCommand("start", StartCommand)
 	userDispatcher.RegisterCommand("promptset", SetPromptCommand)
 	userDispatcher.RegisterCommand("promptreset", ResetPromtCommand)
 	return userDispatcher
@@ -51,11 +52,11 @@ func (d *Dispatcher) RegisterCommand(path string, command Command) {
 }
 
 func (d *Dispatcher) HandleUpdate(bot *GPTBot, update *tgbotapi.Update) {
-	if update.Message == nil || bot.ValidateUpdate(update) != nil {
+	if update.CallbackQuery != nil {
+		d.baseHandlers["callback"](bot, update)
 		return
 	}
-
-	if update.Message.IsCommand() {
+	if update.Message != nil && update.Message.IsCommand() {
 		commandText := update.Message.Command()
 		cmd, ok := d.commands[commandText]
 		if !ok {
@@ -63,6 +64,9 @@ func (d *Dispatcher) HandleUpdate(bot *GPTBot, update *tgbotapi.Update) {
 			return
 		}
 		cmd(bot, update)
+		return
+	}
+	if update.Message == nil || bot.ValidateUpdate(update) != nil {
 		return
 	}
 	if update.Message.Document != nil {
@@ -84,14 +88,8 @@ func (d *Dispatcher) HandleUpdate(bot *GPTBot, update *tgbotapi.Update) {
 func (b *GPTBot) ValidateUpdate(update *tgbotapi.Update) error {
 	err := b.userService.ValidateTgUser(update.SentFrom())
 	if err != nil {
-		log.Printf("Got message (%s) for not authenticaded user %s", update.Message.Text, update.Message.From.UserName)
-		messageText := fmt.Sprintf(
-			"Looks like you are not authenticated to use this bot. Plesae send this info to administrator:\n"+
-				"```javascript\n"+
-				`{"tg_id": %d, "tg_username": "%s", "chat_id": %d}`+
-				"```\n",
-			update.Message.From.ID, update.Message.From.UserName, update.Message.Chat.ID)
-
+		log.Printf("got message (%s) from not authenticaded user %s", update.Message.Text, update.Message.From.UserName)
+		messageText := "Looks like you are not authenticated yet to use this bot. Please use /start command and wait while admin processes your request"
 		_, _ = b.chatService.SendMessage(MessageOut{ChatId: update.Message.Chat.ID, RepyToId: int64(update.Message.MessageID), Text: messageText})
 	}
 	return err

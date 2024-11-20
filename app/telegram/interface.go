@@ -32,6 +32,7 @@ type UserService interface {
 	SetUserPrompt(prompt *user.UserPrompt) error
 	UpdateUser(*user.User) error
 	ValidateTgUser(tgUser *tgbotapi.User) error
+	SaveUser(user *user.User) error
 	GetUserState(tgId int64) (user.State, error)
 	SetUserState(tgId int64, state user.State) error
 	ResetUserState(tgId int64) error

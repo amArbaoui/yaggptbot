@@ -11,6 +11,8 @@ import (
 type BotOptions struct {
 	MaxConversationDepth int
 	BotDebugEnabled      bool
+	NotificationChatId   int64
+	BotAdminChatId       int64
 }
 
 type GPTBot struct {
@@ -55,16 +57,12 @@ func (b *GPTBot) StartPolling(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 func (b *GPTBot) Handle(update *tgbotapi.Update) {
-	if update.Message == nil {
-		log.Printf("ignoring update, not a message")
+	if update.Message == nil && update.CallbackQuery == nil {
+		log.Printf("ignoring update, not a message, nor callback")
 		return
 	}
-	if update.Message.Chat.IsPrivate() {
-		b.userDispatcher.HandleUpdate(b, update)
-	} else {
-		log.Println("recieved group update, not implemented")
+	b.userDispatcher.HandleUpdate(b, update)
 
-	}
 }
 
 func (b *GPTBot) TextReply(replyText string, m *tgbotapi.Message) (*tgbotapi.Message, error) {

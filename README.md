@@ -21,14 +21,19 @@ This is just a simple TG bot, allowing users to do only one thing - chat with GP
 Docker
 
 ### Installing
-Drop env file in app folder.
+1. Register bot and get tekegran token.
+2. Create notification chat and add bot with manage privileges.
+3. Get openai token.
+4. Drop env file in app folder.
+
 ```bash
 SERV_ADDR=:8081
 TG_TOKEN=TG_TOKEN
 OPENAI_TOKEN=OPENAI_TOKEN
 X_API_KEY=API-KEY
 ENCRYPTION_KEY="dA6ED5MJXumah90N1irZ7KUj6LGP0pGAeN9Aj8uj9b8=" # 32 bit key string
-REPORT_CHAT_ID=12345
+ADMADMIN_CHAT_ID=12345
+NOTIFICATION_CHAT_ID=12345
 ```
 Run docker compose up  
 
@@ -39,6 +44,9 @@ curl -X POST --header "X-API-KEY:API-KEY" host:8081/user -d '{"tg_id": 123456, "
 
 
 ## Version History
+* 0.3.0
+    * Use callback for registration
+    * Add notification chat
 * 0.2.0
     * Add reports
 * 0.1.3

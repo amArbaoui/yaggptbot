@@ -8,6 +8,35 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+func StartCommand(bot *GPTBot, update *tgbotapi.Update) {
+	fromId := update.Message.From.ID
+	tgName := update.Message.From.UserName
+	err := bot.userService.ValidateTgUser(update.SentFrom())
+	if err == nil {
+		return
+	}
+	if update.Message.From.ID == bot.botOptions.BotAdminChatId {
+		err = bot.userService.SaveUser(&user.User{
+			Id:     fromId,
+			TgName: tgName,
+			ChatId: fromId,
+		})
+		if err != nil {
+			return
+		}
+		log.Printf("registered admin user %s", tgName)
+	}
+	msg := tgbotapi.NewMessage(bot.botOptions.NotificationChatId, fmt.Sprintf("🧐 Register %s?", tgName))
+	msg.ReplyMarkup = NewRegistrationKeyboard(
+		tgName,
+		fromId,
+	)
+	_, err = bot.botAPI.Send(msg)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func SetPromptCommand(bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
 	currentPrompt, err := bot.userService.GetUserPromptByTgId(m.From.ID)

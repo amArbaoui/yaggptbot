@@ -44,9 +44,9 @@ func main() {
 	chatService := telegram.NewChatService(botApi)
 	llmService := llm.NewOpenAiService(cnf.OpenAiToken, config.OpenAiMaxTokens, config.DefaultPromt)
 	userService := user.NewUserService(db)
-	reportService := report.NewReportService(chatService, cnf.ChatIdReport, db)
+	reportService := report.NewReportService(chatService, cnf.NotificationChatId, db)
 	reportScheduler, _ := report.NewReportScheduler(&reportService)
-	botOptions := telegram.BotOptions{MaxConversationDepth: config.MaxMessageContextDepth, BotDebugEnabled: config.BotDebugEnabled}
+	botOptions := telegram.BotOptions{MaxConversationDepth: config.MaxMessageContextDepth, BotDebugEnabled: config.BotDebugEnabled, BotAdminChatId: cnf.AdminChatId, NotificationChatId: cnf.NotificationChatId}
 	bot := telegram.NewGPTBot(botApi, chatService, llmService, msgService, userService, botOptions)
 	apiServer := api.NewServer(cnf.SrvAddr, cnf.ApiKey, userService, chatService, llmService)
 	go bot.StartPolling(ctx, &wg)

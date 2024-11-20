@@ -1,10 +1,15 @@
 package telegram
 
 import (
+	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/llm"
+	"fmt"
+
 	"amArbaoui/yaggptbot/app/user"
 	"errors"
 	"log"
+	"strconv"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -108,6 +113,59 @@ func UserPhotoHandler(bot *GPTBot, update *tgbotapi.Update) {
 		log.Println(err)
 	}
 
+}
+
+func CallbackHandler(bot *GPTBot, update *tgbotapi.Update) {
+	data := update.CallbackData()
+	if strings.HasPrefix(data, "user:") {
+		handleUserCallback(update, bot)
+	}
+
+}
+
+func handleUserCallback(update *tgbotapi.Update, bot *GPTBot) {
+	data := update.CallbackData()
+	split := strings.Split(data, ":")
+	operation := split[1]
+	userName := split[2]
+	userId, _ := strconv.Atoi(split[3])
+	if operation == "register" {
+		err := bot.userService.SaveUser(
+			&user.User{
+				Id:     int64(userId),
+				TgName: userName,
+				ChatId: int64(userId),
+			},
+		)
+		callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
+		if _, err := bot.botAPI.Request(callback); err != nil {
+			fmt.Println(err)
+		}
+		if err == nil {
+			_, err := bot.chatService.SendMessage(
+				MessageOut{
+					Text:     tgbotapi.EscapeText("Markdown", config.GreetUserMessage),
+					ChatId:   int64(userId),
+					RepyToId: 0,
+				},
+			)
+			if err != nil {
+				log.Println("failed to greet user")
+			}
+			_, err = bot.chatService.SendMessage(
+				MessageOut{
+					Text:     tgbotapi.EscapeText("Markdown", config.HowToUseItMessage),
+					ChatId:   int64(userId),
+					RepyToId: 0,
+				},
+			)
+			if err != nil {
+				log.Println("failed to send instruction")
+			}
+
+		}
+
+	}
 }
 
 func (b *GPTBot) GetConversationChain(m *tgbotapi.Message) ([]llm.CompletionRequestMessage, error) {
