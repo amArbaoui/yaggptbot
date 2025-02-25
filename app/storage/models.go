@@ -25,3 +25,10 @@ type Prompt struct {
 	CreatedAt int64   `db:"created_at"`
 	UpdatedAt *int64  `db:"updated_at"`
 }
+
+type Model struct {
+	UserID    int64   `db:"user_id"`
+	Model     *string `db:"model"`
+	CreatedAt int64   `db:"created_at"`
+	UpdatedAt *int64  `db:"updated_at"`
+}

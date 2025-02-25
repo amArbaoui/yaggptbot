@@ -16,4 +16,6 @@ type UserRepository interface {
 	GetUserState(userId int64) (State, error)
 	SetUserState(userId int64, state State) error
 	ResetUserState(userId int64) error
+	GetUserModel(userId int64) (*storage.Model, error)
+	SetUserModel(model *UserModel) error
 }

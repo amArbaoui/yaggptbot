@@ -4,6 +4,7 @@ import (
 	"amArbaoui/yaggptbot/app/api"
 	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/llm"
+	"amArbaoui/yaggptbot/app/llm/openrouter"
 	"amArbaoui/yaggptbot/app/report"
 	"amArbaoui/yaggptbot/app/storage"
 	"amArbaoui/yaggptbot/app/telegram"
@@ -42,13 +43,19 @@ func main() {
 	}
 	msgService := telegram.NewMessageDbService(db, encryptionService)
 	chatService := telegram.NewChatService(botApi)
-	llmService := llm.NewOpenAiService(cnf.OpenAiToken, config.OpenAiMaxTokens, config.DefaultPromt)
+	openAiProvider := llm.NewOpenAiProvider(cnf.OpenAiToken, config.OpenAiMaxTokens, config.DefaultPromt)
+	opneRouterClient := openrouter.NewOpenrouterClient(config.OpenRouterApiUrl, cnf.OpenRouterToken)
+	openRouterProvider := llm.NewOpenrouterProvider(*opneRouterClient, config.DefaultPromt)
+	llmService := llm.LlmService{Providers: map[string]llm.ChatProvider{
+		config.OpenAI:     openAiProvider,
+		config.OpenRouter: openRouterProvider,
+	}}
 	userService := user.NewUserService(db)
 	reportService := report.NewReportService(chatService, cnf.NotificationChatId, db)
 	reportScheduler, _ := report.NewReportScheduler(&reportService)
 	botOptions := telegram.BotOptions{MaxConversationDepth: config.MaxMessageContextDepth, BotDebugEnabled: config.BotDebugEnabled, BotAdminChatId: cnf.AdminChatId, NotificationChatId: cnf.NotificationChatId}
 	bot := telegram.NewGPTBot(botApi, chatService, llmService, msgService, userService, botOptions)
-	apiServer := api.NewServer(cnf.SrvAddr, cnf.ApiKey, userService, chatService, llmService)
+	apiServer := api.NewServer(cnf.SrvAddr, cnf.ApiKey, userService, chatService, &llmService)
 	go bot.StartPolling(ctx, &wg)
 	go apiServer.Run(ctx, &wg)
 	go reportScheduler.Run(ctx, &wg)

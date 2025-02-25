@@ -21,6 +21,9 @@ const (
 	sqlGetUserState     = "select state from user_state where user_id = $1 "
 	sqlSetUserState     = "insert into user_state (user_id, state) values ($1, $2)"
 	sqlRemoveUserState  = "delete from user_state where user_id = $1"
+	sqlRemoveUserModel  = "delete from user_model where user_id = $1"
+	sqlSetUserModel     = "insert or replace into user_model (user_id, model, created_at, updated_at) values (:user_id, :model, :created_at, :updated_at)"
+	sqlGetUserModel     = "select  user_id, model, created_at, updated_at from user_model where user_id = $1"
 )
 
 type UserDbRepository struct {
@@ -119,4 +122,31 @@ func (rep *UserDbRepository) ResetUserState(userId int64) error {
 	_, err := rep.db.Exec(sqlRemoveUserState, userId)
 	return err
 
+}
+
+func (rep *UserDbRepository) GetUserModel(userId int64) (*storage.Model, error) {
+	var userModel storage.Model
+	err := rep.db.Get(&userModel, sqlGetUserModel, userId)
+	if err != nil {
+		return nil, fmt.Errorf("%w:%v", ErrModelNotSet, err)
+	}
+	return &userModel, nil
+}
+
+func (rep *UserDbRepository) ResetUserModel(userId int64) error {
+	_, err := rep.db.Exec(sqlRemoveUserModel, userId)
+	return err
+
+}
+
+func (rep *UserDbRepository) SetUserModel(model *UserModel) error {
+	userModel := storage.Model{UserID: model.UserID, Model: &model.Model, CreatedAt: time.Now().Unix(), UpdatedAt: nil}
+	tx := rep.db.MustBegin()
+	tx.MustExec(sqlRemoveUserModel, model.UserID)
+	tx.NamedExec(sqlSetUserModel, &userModel)
+	err := tx.Commit()
+	if err != nil {
+		return fmt.Errorf("%w:%v", ErrModelNotSet, err)
+	}
+	return nil
 }

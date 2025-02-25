@@ -18,8 +18,12 @@ Happy chatting!
 `
 
 const (
+	OpenAI                 = "openai"
+	OpenRouter             = "openrouter"
+	OpenRouterApiUrl       = "https://openrouter.ai/api/v1"
 	MaxMessageContextDepth = 30
 	OpenAiMaxTokens        = 1000
+	TelegramMessageLimit   = 4096
 	BotDebugEnabled        = false
 	DefaultPromt           = `Instruction:
 			You're AI assistant.
@@ -31,4 +35,12 @@ const (
 			Don't repeat yourself
 			Do not introduce yourself, just answer the user concisely
 			but accurately and in respectful manner.\n`
+
+	ChatGPT4o         = "chatgpt-4o"
+	ChatGPTO3MiniHigh = "chatgpt-o3-mini-high"
+	ClaudeSonnet3Dot5 = "claude-3.5-sonnet"
+	ClaudeSonnet3Dot7 = "claude-3.7-sonnet"
+	Gemini2Dot0       = "gemini-2.0-flash"
 )
+
+const DefaultModel = Gemini2Dot0

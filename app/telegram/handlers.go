@@ -44,7 +44,11 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 	if err == nil {
 		promptText = prompt.Prompt
 	}
-	llmResp, err := bot.llmService.GetCompletionMessage(llmCompetionRequest, promptText)
+	model, err := bot.userService.GetUserModel(update.SentFrom().ID)
+	if err != nil {
+		log.Println(err)
+	}
+	llmResp, err := bot.llmService.GetCompletionMessage(llmCompetionRequest, promptText, model.Model)
 	if err != nil {
 		log.Println(err)
 
@@ -99,7 +103,7 @@ func UserPhotoHandler(bot *GPTBot, update *tgbotapi.Update) {
 		ImageUrl: &imageUrl,
 	},
 	)
-	llmResp, err := bot.llmService.GetCompletionMessage(conversationChain, "")
+	llmResp, err := bot.llmService.GetCompletionMessage(conversationChain, "", config.ChatGPT4o)
 	if err != nil {
 		log.Println(err)
 	}
@@ -119,6 +123,9 @@ func CallbackHandler(bot *GPTBot, update *tgbotapi.Update) {
 	data := update.CallbackData()
 	if strings.HasPrefix(data, "user:") {
 		handleUserCallback(update, bot)
+	}
+	if strings.HasPrefix(data, "model:") {
+		handleModelSelectionCallback(update, bot)
 	}
 
 }
@@ -164,6 +171,30 @@ func handleUserCallback(update *tgbotapi.Update, bot *GPTBot) {
 			}
 
 		}
+
+	}
+}
+
+func handleModelSelectionCallback(update *tgbotapi.Update, bot *GPTBot) {
+	var reply string
+	data := update.CallbackData()
+	split := strings.Split(data, ":")
+	operation := split[1]
+	modelName := split[2]
+	userId, _ := strconv.Atoi(split[3])
+	userEntity, err := bot.userService.GetUserByTgId(int64(userId))
+	if err != nil {
+		reply = "error, failed to set model"
+		bot.botAPI.Send(tgbotapi.NewMessage(int64(userId), reply))
+		return
+	}
+	if operation == "set" {
+		err := bot.userService.SetUserModel(&user.UserModel{UserID: userEntity.Id, Model: modelName})
+		if err != nil {
+			reply = "error, failed to set model"
+		}
+		reply = fmt.Sprintf("you're now using %s", modelName)
+		bot.botAPI.Send(tgbotapi.NewMessage(int64(userId), reply))
 
 	}
 }

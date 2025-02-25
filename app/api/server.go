@@ -19,10 +19,10 @@ type Server struct {
 	apiKey      string
 	userService *user.UserServiceImpl
 	chatService telegram.ChatService
-	llmService  *llm.OpenAiService
+	llmService  *llm.LlmService
 }
 
-func NewServer(listenAddr string, apiKey string, userService *user.UserServiceImpl, chatService telegram.ChatService, llmService *llm.OpenAiService) *Server {
+func NewServer(listenAddr string, apiKey string, userService *user.UserServiceImpl, chatService telegram.ChatService, llmService *llm.LlmService) *Server {
 	return &Server{listenAddr: listenAddr, apiKey: apiKey, userService: userService, chatService: chatService, llmService: llmService}
 }
 

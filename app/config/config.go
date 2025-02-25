@@ -12,6 +12,7 @@ type Config struct {
 	SrvAddr            string
 	TgToken            string
 	OpenAiToken        string
+	OpenRouterToken    string
 	ApiKey             string
 	EncryptionKey      string
 	NotificationChatId int64
@@ -41,6 +42,7 @@ func NewConfig() *Config {
 	return &Config{SrvAddr: configMap["SERV_ADDR"],
 		TgToken:            configMap["TG_TOKEN"],
 		OpenAiToken:        configMap["OPENAI_TOKEN"],
+		OpenRouterToken:    configMap["OPENROUTER_TOKEN"],
 		ApiKey:             configMap["X_API_KEY"],
 		EncryptionKey:      configMap["ENCRYPTION_KEY"],
 		NotificationChatId: int64(notificationChat),
@@ -54,6 +56,7 @@ func ReadConfigMap() map[string]string {
 		"SERV_ADDR":            os.Getenv("SERV_ADDR"),
 		"TG_TOKEN":             os.Getenv("TG_TOKEN"),
 		"OPENAI_TOKEN":         os.Getenv("OPENAI_TOKEN"),
+		"OPENROUTER_TOKEN":     os.Getenv("OPENROUTER_TOKEN"),
 		"X_API_KEY":            os.Getenv("X_API_KEY"),
 		"ENCRYPTION_KEY":       os.Getenv("ENCRYPTION_KEY"),
 		"NOTIFICATION_CHAT_ID": os.Getenv("NOTIFICATION_CHAT_ID"),

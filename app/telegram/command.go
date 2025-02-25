@@ -67,3 +67,20 @@ func ResetPromtCommand(bot *GPTBot, update *tgbotapi.Update) {
 	bot.userService.ResetUserState(m.From.ID)
 	bot.chatService.SendMessage(resp)
 }
+
+func SetModelCommand(bot *GPTBot, update *tgbotapi.Update) {
+	m := update.Message
+	usr, err := bot.userService.GetUserByTgId(m.From.ID)
+	if err != nil {
+		log.Printf("user %d not found %v", m.From.ID, err)
+		return
+	}
+	model, err := bot.userService.GetUserModel(usr.Id)
+	if err != nil {
+		log.Printf("failed to get modle for user %d, %v", m.From.ID, err)
+		return
+	}
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("You are using %s. Please select new model", model.Model))
+	msg.ReplyMarkup = NewModelKeyboard(update.Message.Chat.ID)
+	bot.botAPI.Send(msg)
+}

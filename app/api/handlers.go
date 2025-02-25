@@ -125,7 +125,7 @@ func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
 }
 
 type LlmHandler struct {
-	llmService *llm.OpenAiService
+	llmService *llm.LlmService
 }
 
 func (l *LlmHandler) GetCompletion(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +138,7 @@ func (l *LlmHandler) GetCompletion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	llmReq := NewCompletionRequestMessageSlice(&completionRequestHolder)
-	resp, err := l.llmService.GetCompletionMessage(llmReq, "")
+	resp, err := l.llmService.GetCompletionMessage(llmReq, "", config.DefaultModel) // TODO: select model
 	if err != nil {
 		ErrorResponse(err, "failed to get completion", http.StatusUnprocessableEntity, w, r)
 		return

@@ -35,6 +35,8 @@ func GetUserDispatcher() *Dispatcher {
 	userDispatcher.RegisterCommand("start", StartCommand)
 	userDispatcher.RegisterCommand("promptset", SetPromptCommand)
 	userDispatcher.RegisterCommand("promptreset", ResetPromtCommand)
+	userDispatcher.RegisterCommand("setmodel", SetModelCommand)
+
 	return userDispatcher
 
 }

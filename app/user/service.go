@@ -1,6 +1,7 @@
 package user
 
 import (
+	"amArbaoui/yaggptbot/app/config"
 	"errors"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -85,6 +86,26 @@ func (us *UserServiceImpl) GetUserPromptByTgId(tgId int64) (*UserPrompt, error) 
 
 func (us *UserServiceImpl) SetUserPrompt(prompt *UserPrompt) error {
 	return us.rep.SetUserPrompt(prompt)
+
+}
+func (us *UserServiceImpl) GetUserModel(userId int64) (*UserModel, error) {
+	model, err := us.rep.GetUserModel(userId)
+	if err != nil {
+		return &UserModel{UserID: userId, Model: config.DefaultModel}, nil
+	}
+	return &UserModel{UserID: model.UserID, Model: *model.Model}, nil
+}
+func (us *UserServiceImpl) GetUserModelByTgId(tgId int64) (*UserModel, error) {
+	user, err := us.rep.GetUserByTgId(tgId)
+	if err != nil {
+		return nil, err
+	}
+
+	return us.GetUserModel(user.ID)
+}
+
+func (us *UserServiceImpl) SetUserModel(model *UserModel) error {
+	return us.rep.SetUserModel(model)
 
 }
 

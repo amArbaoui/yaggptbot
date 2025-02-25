@@ -9,7 +9,7 @@ import (
 )
 
 type LlmService interface {
-	GetCompletionMessage(messages []llm.CompletionRequestMessage, prompt string) (string, error)
+	GetCompletionMessage(messages []llm.CompletionRequestMessage, prompt string, model string) (string, error)
 }
 
 type MessageService interface {
@@ -36,6 +36,8 @@ type UserService interface {
 	GetUserState(tgId int64) (user.State, error)
 	SetUserState(tgId int64, state user.State) error
 	ResetUserState(tgId int64) error
+	GetUserModel(userId int64) (*user.UserModel, error)
+	SetUserModel(model *user.UserModel) error
 }
 
 type MessageRepository interface {

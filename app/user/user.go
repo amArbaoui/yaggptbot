@@ -27,3 +27,8 @@ type UserPrompt struct {
 	UserID int64
 	Prompt string
 }
+
+type UserModel struct {
+	UserID int64
+	Model  string
+}
