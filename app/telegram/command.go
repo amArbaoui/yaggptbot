@@ -70,12 +70,7 @@ func ResetPromtCommand(bot *GPTBot, update *tgbotapi.Update) {
 
 func SetModelCommand(bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
-	usr, err := bot.userService.GetUserByTgId(m.From.ID)
-	if err != nil {
-		log.Printf("user %d not found %v", m.From.ID, err)
-		return
-	}
-	model, err := bot.userService.GetUserModel(usr.Id)
+	model, err := bot.userService.GetUserModelByTgId(m.From.ID)
 	if err != nil {
 		log.Printf("failed to get modle for user %d, %v", m.From.ID, err)
 		return

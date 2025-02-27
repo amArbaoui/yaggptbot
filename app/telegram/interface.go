@@ -37,6 +37,7 @@ type UserService interface {
 	SetUserState(tgId int64, state user.State) error
 	ResetUserState(tgId int64) error
 	GetUserModel(userId int64) (*user.UserModel, error)
+	GetUserModelByTgId(tgId int64) (*user.UserModel, error)
 	SetUserModel(model *user.UserModel) error
 }
 

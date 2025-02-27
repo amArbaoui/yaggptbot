@@ -40,6 +40,8 @@ Run docker compose up
 
 
 ## Version History
+* 0.4.1
+    * fixed bug with model update
 * 0.4.0
     * Add Openrouter provider
     * Add abiity to select model (/setmodel)

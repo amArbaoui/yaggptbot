@@ -44,7 +44,7 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 	if err == nil {
 		promptText = prompt.Prompt
 	}
-	model, err := bot.userService.GetUserModel(update.SentFrom().ID)
+	model, err := bot.userService.GetUserModelByTgId(update.SentFrom().ID)
 	if err != nil {
 		log.Println(err)
 	}
