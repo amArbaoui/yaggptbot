@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/storage"
+	"bytes"
 	"fmt"
 	"time"
 
@@ -80,4 +81,15 @@ func (rep *MessageDbRepository) SaveMessage(message *tgbotapi.Message, role stri
 	}
 	return nil
 
+}
+
+func (rep *MessageDbRepository) SaveMessages(messages []*tgbotapi.Message, role string) error {
+	var buffer bytes.Buffer
+
+	for _, m := range messages {
+		buffer.WriteString(m.Text)
+	}
+	messageToSave := messages[0]
+	messageToSave.Text = buffer.String()
+	return rep.SaveMessage(messageToSave, role)
 }

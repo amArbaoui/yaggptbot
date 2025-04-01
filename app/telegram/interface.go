@@ -16,10 +16,11 @@ type MessageService interface {
 	GetMessage(messageId int64) (*Message, error)
 	GetMessageChain(topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
 	SaveMessage(message *tgbotapi.Message, role string) error
+	SaveMessages(messages []*tgbotapi.Message, role string) error
 }
 
 type ChatService interface {
-	SendMessage(SendMsgRequest MessageOut) (*tgbotapi.Message, error)
+	SendMessage(SendMsgRequest MessageOut) ([]*tgbotapi.Message, error)
 }
 
 type UserService interface {
@@ -45,4 +46,5 @@ type MessageRepository interface {
 	GetMessageById(messageId int64) (*storage.Message, error)
 	GetMessageChain(topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
 	SaveMessage(message *tgbotapi.Message, role string) error
+	SaveMessages(messages []*tgbotapi.Message, role string) error
 }

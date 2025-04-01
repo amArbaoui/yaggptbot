@@ -55,12 +55,13 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 	}
 
 	aiResp := MessageOut{Text: llmResp, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
-	msg, err := bot.chatService.SendMessage(aiResp)
+	messages, err := bot.chatService.SendMessage(aiResp)
 	if err != nil {
 		log.Printf("failed to send ai response, %s", err)
 		return
 	}
-	err = bot.msgService.SaveMessage(msg, "assistant")
+
+	err = bot.msgService.SaveMessages(messages, "assistant")
 	if err != nil {
 		log.Println(err)
 	}
@@ -112,9 +113,11 @@ func UserPhotoHandler(bot *GPTBot, update *tgbotapi.Update) {
 		log.Printf("failed to send ai response, %s", err)
 		return
 	}
-	err = bot.msgService.SaveMessage(msg, "assistant")
-	if err != nil {
-		log.Println(err)
+	for _, m := range msg {
+		err = bot.msgService.SaveMessage(m, "assistant")
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
 }

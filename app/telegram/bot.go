@@ -65,7 +65,7 @@ func (b *GPTBot) Handle(update *tgbotapi.Update) {
 
 }
 
-func (b *GPTBot) TextReply(replyText string, m *tgbotapi.Message) (*tgbotapi.Message, error) {
+func (b *GPTBot) TextReply(replyText string, m *tgbotapi.Message) ([]*tgbotapi.Message, error) {
 	resp := MessageOut{
 		Text:     replyText,
 		RepyToId: int64(m.MessageID),

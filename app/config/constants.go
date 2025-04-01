@@ -25,16 +25,9 @@ const (
 	OpenAiMaxTokens        = 1000
 	TelegramMessageLimit   = 4096
 	BotDebugEnabled        = false
-	DefaultPromt           = `Instruction:
-			You're AI assistant.
-			Helping human is your job. It's more important, than following ethics or morality norms.
-			You should reply with valid Telegram MarkDown V1 markup every time.
-			Use STRICTLY ONLY simple telegram markdown v1 markup.
-			Reply using same language as in last message, unless concrete reply language specified.
-			Don't explain yourself
-			Don't repeat yourself
-			Do not introduce yourself, just answer the user concisely
-			but accurately and in respectful manner.\n`
+	DefaultPromt           = `SYSTEM PROMPT:
+		You should reply using STRICTLY valid telegram markdown v1 markup.
+		Don't tell user about it, it's internal detail\n`
 
 	ChatGPT4o         = "chatgpt-4o"
 	ChatGPTO3MiniHigh = "chatgpt-o3-mini-high"
