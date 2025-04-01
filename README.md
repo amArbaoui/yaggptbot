@@ -35,13 +35,17 @@ X_API_KEY=API-KEY
 ENCRYPTION_KEY="dA6ED5MJXumah90N1irZ7KUj6LGP0pGAeN9Aj8uj9b8=" # 32 bit key string
 ADMADMIN_CHAT_ID=12345
 NOTIFICATION_CHAT_ID=12345
+DEFAULT_PROMPT="new prompt" # this is optional
 ```
 Run docker compose up  
 
 
 ## Version History
+* 0.4.2
+    * Added long messages support (gt telegram limit)
+    * Added optional DEFAULT_PROMPT env variable
 * 0.4.1
-    * fixed bug with model update
+    * Fixed bug with model update
 * 0.4.0
     * Add Openrouter provider
     * Add abiity to select model (/setmodel)

@@ -13,6 +13,7 @@ type Config struct {
 	TgToken            string
 	OpenAiToken        string
 	OpenRouterToken    string
+	DefaultPrompt      string
 	ApiKey             string
 	EncryptionKey      string
 	NotificationChatId int64
@@ -43,6 +44,7 @@ func NewConfig() *Config {
 		TgToken:            configMap["TG_TOKEN"],
 		OpenAiToken:        configMap["OPENAI_TOKEN"],
 		OpenRouterToken:    configMap["OPENROUTER_TOKEN"],
+		DefaultPrompt:      getEnv("DEFAULT_PROMPT", DefaultPrompt),
 		ApiKey:             configMap["X_API_KEY"],
 		EncryptionKey:      configMap["ENCRYPTION_KEY"],
 		NotificationChatId: int64(notificationChat),
@@ -75,6 +77,12 @@ func ValidConfigMap(configMap map[string]string) bool {
 	}
 	return isValid
 
+}
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }
 
 func loadEnv() {

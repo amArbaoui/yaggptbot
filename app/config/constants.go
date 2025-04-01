@@ -25,7 +25,7 @@ const (
 	OpenAiMaxTokens        = 1000
 	TelegramMessageLimit   = 4096
 	BotDebugEnabled        = false
-	DefaultPromt           = `SYSTEM PROMPT:
+	DefaultPrompt          = `SYSTEM PROMPT:
 		You should reply using STRICTLY valid telegram markdown v1 markup.
 		Don't tell user about it, it's internal detail\n`
 
