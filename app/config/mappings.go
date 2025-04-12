@@ -14,7 +14,7 @@ var ModelMap = map[string]string{
 	Gemini2Dot0:       OpenRouter,
 }
 var OpenaiModelMapping = map[string]string{
-	ChatGPT4o: openai.GPT4o,
+	ChatGPT4o: openai.GPT4oLatest,
 }
 
 var OpenRouterModelMapping = map[string]openrouter.Model{

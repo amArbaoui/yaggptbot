@@ -37,13 +37,12 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 	case nil:
 		promptText = prompt.Prompt
 	case user.ErrPromptNotFound:
+		promptText = bot.config.DefaultPrompt
 	default:
+		promptText = bot.config.DefaultPrompt
 		log.Println(err)
 	}
 
-	if err == nil {
-		promptText = prompt.Prompt
-	}
 	model, err := bot.userService.GetUserModelByTgId(update.SentFrom().ID)
 	if err != nil {
 		log.Println(err)
@@ -104,7 +103,7 @@ func UserPhotoHandler(bot *GPTBot, update *tgbotapi.Update) {
 		ImageUrl: &imageUrl,
 	},
 	)
-	llmResp, err := bot.llmService.GetCompletionMessage(conversationChain, "", config.ChatGPT4o)
+	llmResp, err := bot.llmService.GetCompletionMessage(conversationChain, bot.config.DefaultPrompt, config.ChatGPT4o)
 	if err != nil {
 		log.Println(err)
 	}
@@ -154,7 +153,7 @@ func handleUserCallback(update *tgbotapi.Update, bot *GPTBot) {
 		if err == nil {
 			_, err := bot.chatService.SendMessage(
 				MessageOut{
-					Text:     tgbotapi.EscapeText("Markdown", config.GreetUserMessage),
+					Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.GreetUserMessage),
 					ChatId:   int64(userId),
 					RepyToId: 0,
 				},
@@ -164,7 +163,7 @@ func handleUserCallback(update *tgbotapi.Update, bot *GPTBot) {
 			}
 			_, err = bot.chatService.SendMessage(
 				MessageOut{
-					Text:     tgbotapi.EscapeText("Markdown", config.HowToUseItMessage),
+					Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.HowToUseItMessage),
 					ChatId:   int64(userId),
 					RepyToId: 0,
 				},

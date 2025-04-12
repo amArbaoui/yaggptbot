@@ -103,7 +103,7 @@ func (usr *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
 	_, err := usr.chatService.SendMessage(
 		telegram.MessageOut{
-			Text:     tgbotapi.EscapeText("Markdown", config.GreetUserMessage),
+			Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.GreetUserMessage),
 			ChatId:   int64(newUserRequest.ChatId),
 			RepyToId: 0,
 		},
@@ -113,7 +113,7 @@ func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
 	}
 	_, err = usr.chatService.SendMessage(
 		telegram.MessageOut{
-			Text:     tgbotapi.EscapeText("Markdown", config.HowToUseItMessage),
+			Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.HowToUseItMessage),
 			ChatId:   int64(newUserRequest.ChatId),
 			RepyToId: 0,
 		},

@@ -20,15 +20,10 @@ func (o *OpenRouterProvider) GetCompletionMessage(messages []CompletionRequestMe
 		return "", ErrProviderNotFound
 	}
 	completionMessages := make([]openrouter.CompletionMessage, 0, len(messages))
-
-	prompt := o.DefaultPrompt
-	if userPromt != "" {
-		prompt = userPromt
-	}
 	completionMessages = append(completionMessages, openrouter.CompletionMessage{
 		Role: "user", Content: []openrouter.CompletionContent{{
 			Type: "text",
-			Text: &prompt,
+			Text: &userPromt,
 		},
 		},
 	},

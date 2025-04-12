@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"amArbaoui/yaggptbot/app/config"
 	"context"
 	"log"
 	"sync"
@@ -23,6 +24,7 @@ type GPTBot struct {
 	userService    UserService
 	botOptions     BotOptions
 	userDispatcher *Dispatcher
+	config         config.Config
 }
 
 func NewGPTBot(botApi *tgbotapi.BotAPI,
@@ -30,14 +32,16 @@ func NewGPTBot(botApi *tgbotapi.BotAPI,
 	llmservice LlmService,
 	messageService MessageService,
 	userService UserService,
-	botOptions BotOptions) GPTBot {
+	botOptions BotOptions,
+	config *config.Config) GPTBot {
 	return GPTBot{botAPI: botApi,
 		chatService:    chatService,
 		llmService:     llmservice,
 		msgService:     messageService,
 		userService:    userService,
 		botOptions:     botOptions,
-		userDispatcher: GetUserDispatcher()}
+		userDispatcher: GetUserDispatcher(),
+		config:         *config}
 }
 
 func (b *GPTBot) StartPolling(ctx context.Context, wg *sync.WaitGroup) {

@@ -54,7 +54,7 @@ func main() {
 	reportService := report.NewReportService(chatService, cnf.NotificationChatId, db)
 	reportScheduler, _ := report.NewReportScheduler(&reportService)
 	botOptions := telegram.BotOptions{MaxConversationDepth: config.MaxMessageContextDepth, BotDebugEnabled: config.BotDebugEnabled, BotAdminChatId: cnf.AdminChatId, NotificationChatId: cnf.NotificationChatId}
-	bot := telegram.NewGPTBot(botApi, chatService, llmService, msgService, userService, botOptions)
+	bot := telegram.NewGPTBot(botApi, chatService, llmService, msgService, userService, botOptions, cnf)
 	apiServer := api.NewServer(cnf.SrvAddr, cnf.ApiKey, userService, chatService, &llmService)
 	go bot.StartPolling(ctx, &wg)
 	go apiServer.Run(ctx, &wg)

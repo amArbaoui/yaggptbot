@@ -1,4 +1,4 @@
-FROM golang:1.22.4 as builder
+FROM golang:1.24.2 as builder
 ENV CGO_ENABLED=1
 WORKDIR /opt/yaggptbot
 COPY . .

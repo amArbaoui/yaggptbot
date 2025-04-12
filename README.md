@@ -21,7 +21,7 @@ This is just a simple TG bot, allowing users to do only one thing - chat with GP
 Docker
 
 ### Installing
-1. Register bot and get tekegran token.
+1. Register bot and get telegram token.
 2. Create notification chat and add bot with manage privileges.
 3. Get openai & openrouter tokens.
 4. Drop env file in app folder.
@@ -41,6 +41,10 @@ Run docker compose up
 
 
 ## Version History
+* 0.4.3
+    * Use chatgpt-4o-latest
+    * Fixed bug with image handling
+    * Improved stability
 * 0.4.2
     * Added long messages support (gt telegram limit)
     * Added optional DEFAULT_PROMPT env variable

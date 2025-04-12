@@ -23,7 +23,7 @@ func SetPromptHandler(bot *GPTBot, update *tgbotapi.Update) {
 		respText = "Please send valid prompt text"
 
 	}
-	newPrompt := fmt.Sprintf("SYSTEM_PROMPT: You should reply only in valid Telegram MarkDown V1 markup. USER_PROMPT: %s", messageText)
+	newPrompt := fmt.Sprintf("%s. USER_PROMPT: %s", bot.config.DefaultPrompt, messageText)
 	prompt := user.UserPrompt{UserID: u.Id, Prompt: newPrompt}
 	err = bot.userService.SetUserPrompt(&prompt)
 	if err != nil {

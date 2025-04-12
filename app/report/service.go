@@ -129,7 +129,7 @@ func (rs *ReportService) WeeklyMessagesCount(reportDate time.Time) (string, erro
 }
 
 func (rs *ReportService) SendReport(report string) {
-	_, err := rs.chatSrv.SendMessage(telegram.MessageOut{Text: tgbotapi.EscapeText("Markdown", report), RepyToId: 0, ChatId: rs.chatId})
+	_, err := rs.chatSrv.SendMessage(telegram.MessageOut{Text: tgbotapi.EscapeText(tgbotapi.ModeMarkdown, report), RepyToId: 0, ChatId: rs.chatId})
 	if err != nil {
 		log.Println("failed to send report via telegram")
 	}

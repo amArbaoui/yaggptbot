@@ -4,6 +4,7 @@ import (
 	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/storage"
 	"amArbaoui/yaggptbot/app/util"
+	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jmoiron/sqlx"
@@ -77,7 +78,13 @@ func (ch *ChatServiceImpl) send(chatId int64, replyToId int64, text string) (*tg
 	msgConfig.ParseMode = parseMode
 	msg, err := ch.botApi.Send(msgConfig)
 	if err != nil {
-		ch.botApi.Send(tgbotapi.NewMessage(chatId, "Error, please try again"))
+		msgConfig.Text = tgbotapi.EscapeText(parseMode, text)
+		log.Println("failed to send original message, sending escaped version")
+		msg, err = ch.botApi.Send(msgConfig)
+		if err != nil {
+			log.Println("failed to send message, error: %w", err)
+			ch.botApi.Send(tgbotapi.NewMessage(chatId, "Error, please try again"))
+		}
 	}
 	return &msg, err
 }
