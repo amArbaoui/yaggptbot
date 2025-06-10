@@ -10,8 +10,8 @@ type OpenRouterProvider struct {
 	DefaultPrompt string
 }
 
-func NewOpenrouterProvider(client openrouter.Client, defaultPrompt string) *OpenRouterProvider {
-	return &OpenRouterProvider{client: &client, DefaultPrompt: defaultPrompt}
+func NewOpenrouterProvider(client *openrouter.Client, defaultPrompt string) *OpenRouterProvider {
+	return &OpenRouterProvider{client: client, DefaultPrompt: defaultPrompt}
 
 }
 func (o *OpenRouterProvider) GetCompletionMessage(messages []CompletionRequestMessage, userPromt string, model string) (string, error) {

@@ -32,7 +32,7 @@ func (c *Client) GetChatCompletion(request ChatCompletionRequest) (*ChatCompleti
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
-	response, err := http.DefaultClient.Do(req)
+	response, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *Client) GetChatCompletion(request ChatCompletionRequest) (*ChatCompleti
 func NewOpenrouterClient(baseUrl string, apiKey string) *Client {
 	return &Client{
 		client: &http.Client{
-			Timeout: time.Second * 5,
+			Timeout: time.Second * 300,
 		},
 		baseUrl: baseUrl,
 		apiKey:  apiKey,

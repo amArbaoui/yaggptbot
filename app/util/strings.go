@@ -1,19 +1,22 @@
 package util
 
-import "unicode/utf8"
-
 func SliceString(source string, maxLen int) []string {
-	sourceLen := utf8.RuneCountInString(source)
 	if source == "" {
 		return []string{}
 	}
+
+	sourceRunes := []rune(source)
+	sourceLen := len(sourceRunes)
+
 	if maxLen == 0 || maxLen > sourceLen {
 		return []string{source}
 	}
+
 	batches := sourceLen / maxLen
 	if sourceLen%maxLen != 0 {
 		batches++
 	}
+
 	res := make([]string, 0, batches)
 	for i := 0; i < batches; i++ {
 		start := i * maxLen
@@ -21,7 +24,8 @@ func SliceString(source string, maxLen int) []string {
 		if end > sourceLen {
 			end = sourceLen
 		}
-		res = append(res, source[start:end])
+		res = append(res, string(sourceRunes[start:end]))
 	}
+
 	return res
 }

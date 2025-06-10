@@ -44,8 +44,8 @@ func main() {
 	msgService := telegram.NewMessageDbService(db, encryptionService)
 	chatService := telegram.NewChatService(botApi)
 	openAiProvider := llm.NewOpenAiProvider(cnf.OpenAiToken, config.OpenAiMaxTokens, cnf.DefaultPrompt)
-	opneRouterClient := openrouter.NewOpenrouterClient(config.OpenRouterApiUrl, cnf.OpenRouterToken)
-	openRouterProvider := llm.NewOpenrouterProvider(*opneRouterClient, cnf.DefaultPrompt)
+	openRouterClient := openrouter.NewOpenrouterClient(config.OpenRouterApiUrl, cnf.OpenRouterToken)
+	openRouterProvider := llm.NewOpenrouterProvider(openRouterClient, cnf.DefaultPrompt)
 	llmService := llm.LlmService{Providers: map[string]llm.ChatProvider{
 		config.OpenAI:     openAiProvider,
 		config.OpenRouter: openRouterProvider,

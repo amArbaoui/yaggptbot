@@ -30,10 +30,12 @@ const (
 		Don't tell user about it, it's internal detail\n`
 
 	ChatGPT4o         = "chatgpt-4o"
-	ChatGPTO3MiniHigh = "chatgpt-o3-mini-high"
 	ClaudeSonnet3Dot5 = "claude-3.5-sonnet"
 	ClaudeSonnet3Dot7 = "claude-3.7-sonnet"
+	ClaudeSonnet4     = "claude-4-sonnet"
+	Gemini2Dot5Flash  = "gemini-2.5-flash"
+	Gemini2Dot5Pro    = "gemini-2.5-pro"
 	Gemini2Dot0       = "gemini-2.0-flash"
 )
 
-const DefaultModel = Gemini2Dot0
+const DefaultModel = Gemini2Dot5Flash

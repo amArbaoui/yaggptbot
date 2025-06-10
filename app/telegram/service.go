@@ -82,7 +82,7 @@ func (ch *ChatServiceImpl) send(chatId int64, replyToId int64, text string) (*tg
 		log.Println("failed to send original message, sending escaped version")
 		msg, err = ch.botApi.Send(msgConfig)
 		if err != nil {
-			log.Println("failed to send message, error: %w", err)
+			log.Println("failed to send message, error:", err)
 			ch.botApi.Send(tgbotapi.NewMessage(chatId, "Error, please try again"))
 		}
 	}
