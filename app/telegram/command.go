@@ -2,21 +2,22 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/user"
+	"context"
 	"fmt"
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func StartCommand(bot *GPTBot, update *tgbotapi.Update) {
+func StartCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 	fromId := update.Message.From.ID
 	tgName := update.Message.From.UserName
-	err := bot.userService.ValidateTgUser(update.SentFrom())
+	err := bot.userService.ValidateTgUser(ctx, update.SentFrom())
 	if err == nil {
 		return
 	}
 	if update.Message.From.ID == bot.botOptions.BotAdminChatId {
-		err = bot.userService.SaveUser(&user.User{
+		err = bot.userService.SaveUser(ctx, &user.User{
 			Id:     fromId,
 			TgName: tgName,
 			ChatId: fromId,
@@ -37,9 +38,9 @@ func StartCommand(bot *GPTBot, update *tgbotapi.Update) {
 	}
 }
 
-func SetPromptCommand(bot *GPTBot, update *tgbotapi.Update) {
+func SetPromptCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
-	currentPrompt, err := bot.userService.GetUserPromptByTgId(m.From.ID)
+	currentPrompt, err := bot.userService.GetUserPromptByTgId(ctx, m.From.ID)
 	var respText string
 	if err != nil {
 		respText = "Please enter new prompt"
@@ -47,30 +48,30 @@ func SetPromptCommand(bot *GPTBot, update *tgbotapi.Update) {
 		respText = fmt.Sprintf("Current prompt is: %s\nPlease set new prompt", currentPrompt.Prompt)
 	}
 	resp := MessageOut{Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
-	err = bot.userService.SetUserState(m.From.ID, user.SETTING_PROMT)
+	err = bot.userService.SetUserState(ctx, m.From.ID, user.SETTING_PROMT)
 	if err != nil {
 		log.Printf("failed to set state %v", err)
 		return
 	}
-	bot.chatService.SendMessage(resp)
+	bot.chatService.SendMessage(ctx, resp)
 }
 
-func ResetPromtCommand(bot *GPTBot, update *tgbotapi.Update) {
+func ResetPromtCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
 	respText := "Prompt removed"
 	resp := MessageOut{Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
-	err := bot.userService.RemoveUserPromt(m.From.ID)
+	err := bot.userService.RemoveUserPromt(ctx, m.From.ID)
 	if err != nil {
 		log.Printf("failed to remove prompt %v", err)
 		return
 	}
-	bot.userService.ResetUserState(m.From.ID)
-	bot.chatService.SendMessage(resp)
+	bot.userService.ResetUserState(ctx, m.From.ID)
+	bot.chatService.SendMessage(ctx, resp)
 }
 
-func SetModelCommand(bot *GPTBot, update *tgbotapi.Update) {
+func SetModelCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
-	model, err := bot.userService.GetUserModelByTgId(m.From.ID)
+	model, err := bot.userService.GetUserModelByTgId(ctx, m.From.ID)
 	if err != nil {
 		log.Printf("failed to get modle for user %d, %v", m.From.ID, err)
 		return

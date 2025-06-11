@@ -4,6 +4,7 @@ import (
 	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/storage"
 	"amArbaoui/yaggptbot/app/util"
+	"context"
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -19,18 +20,17 @@ func NewMessageDbService(db *sqlx.DB, encryptService *storage.EncryptionService)
 	return &MessageDbService{rep: &repository}
 }
 
-func (ms *MessageDbService) GetMessage(messageId int64) (*Message, error) {
-	msg, err := ms.rep.GetMessageById(messageId)
+func (ms *MessageDbService) GetMessage(ctx context.Context, messageId int64) (*Message, error) {
+	msg, err := ms.rep.GetMessageById(ctx, messageId)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Message{Id: msg.TgMsgId, Text: msg.Text, RepyToId: msg.RepyToTgMsgId, ChatId: msg.ChatId, Role: msg.Role}, nil
-
 }
 
-func (ms *MessageDbService) GetMessageChain(topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
-	msgChain, err := ms.rep.GetMessageChain(topMessageId, maxConversationDepth)
+func (ms *MessageDbService) GetMessageChain(ctx context.Context, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
+	msgChain, err := ms.rep.GetMessageChain(ctx, topMessageId, maxConversationDepth)
 	if err != nil {
 		return nil, err
 	}
@@ -38,13 +38,12 @@ func (ms *MessageDbService) GetMessageChain(topMessageId int64, maxConversationD
 	return msgChain, nil
 }
 
-func (ms *MessageDbService) SaveMessage(message *tgbotapi.Message, role string) error {
-	return ms.rep.SaveMessage(message, role)
-
+func (ms *MessageDbService) SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error {
+	return ms.rep.SaveMessage(ctx, message, role)
 }
-func (ms *MessageDbService) SaveMessages(messages []*tgbotapi.Message, role string) error {
-	return ms.rep.SaveMessages(messages, role)
 
+func (ms *MessageDbService) SaveMessages(ctx context.Context, messages []*tgbotapi.Message, role string) error {
+	return ms.rep.SaveMessages(ctx, messages, role)
 }
 
 type ChatServiceImpl struct {
@@ -55,7 +54,7 @@ func NewChatService(botApi *tgbotapi.BotAPI) *ChatServiceImpl {
 	return &ChatServiceImpl{botApi: botApi}
 }
 
-func (ch *ChatServiceImpl) SendMessage(SendMsgRequest MessageOut) ([]*tgbotapi.Message, error) {
+func (ch *ChatServiceImpl) SendMessage(ctx context.Context, SendMsgRequest MessageOut) ([]*tgbotapi.Message, error) {
 	splitedText := util.SliceString(SendMsgRequest.Text, config.TelegramMessageLimit)
 	sentMessages := make([]*tgbotapi.Message, 0, len(splitedText))
 	for _, m := range splitedText {
@@ -66,7 +65,6 @@ func (ch *ChatServiceImpl) SendMessage(SendMsgRequest MessageOut) ([]*tgbotapi.M
 		sentMessages = append(sentMessages, msg)
 	}
 	return sentMessages, nil
-
 }
 
 func (ch *ChatServiceImpl) send(chatId int64, replyToId int64, text string) (*tgbotapi.Message, error) {

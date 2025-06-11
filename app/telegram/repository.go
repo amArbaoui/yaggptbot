@@ -3,6 +3,7 @@ package telegram
 import (
 	"amArbaoui/yaggptbot/app/storage"
 	"bytes"
+	"context"
 	"fmt"
 	"time"
 
@@ -20,7 +21,7 @@ type MessageDbRepository struct {
 	encryptService *storage.EncryptionService
 }
 
-func (rep *MessageDbRepository) GetMessageById(messageId int64) (*storage.Message, error) {
+func (rep *MessageDbRepository) GetMessageById(ctx context.Context, messageId int64) (*storage.Message, error) {
 	var msg storage.Message
 	err := rep.db.Get(&msg, sqlGetMessge, messageId)
 	if err != nil {
@@ -38,13 +39,13 @@ func (rep *MessageDbRepository) GetMessageById(messageId int64) (*storage.Messag
 	return &msg, nil
 }
 
-func (rep *MessageDbRepository) GetMessageChain(topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
+func (rep *MessageDbRepository) GetMessageChain(ctx context.Context, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
 	var replyMessageId int64
 	depth := 0
 	replyMessageId = topMessageId
 	messageChain := make([]*storage.Message, 0)
 	for replyMessageId > 0 && depth < maxConversationDepth {
-		reply, err := rep.GetMessageById(replyMessageId)
+		reply, err := rep.GetMessageById(ctx, replyMessageId)
 		if err != nil {
 			return nil, err
 		}
@@ -55,7 +56,7 @@ func (rep *MessageDbRepository) GetMessageChain(topMessageId int64, maxConversat
 	return messageChain, nil
 }
 
-func (rep *MessageDbRepository) SaveMessage(message *tgbotapi.Message, role string) error {
+func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error {
 	var replyTo int64
 	var newMessage storage.Message
 	if reply := message.ReplyToMessage; reply != nil {
@@ -80,10 +81,9 @@ func (rep *MessageDbRepository) SaveMessage(message *tgbotapi.Message, role stri
 		return fmt.Errorf("%w:%v", ErrMessageNotCreated, err)
 	}
 	return nil
-
 }
 
-func (rep *MessageDbRepository) SaveMessages(messages []*tgbotapi.Message, role string) error {
+func (rep *MessageDbRepository) SaveMessages(ctx context.Context, messages []*tgbotapi.Message, role string) error {
 	var buffer bytes.Buffer
 
 	for _, m := range messages {
@@ -91,5 +91,5 @@ func (rep *MessageDbRepository) SaveMessages(messages []*tgbotapi.Message, role 
 	}
 	messageToSave := messages[0]
 	messageToSave.Text = buffer.String()
-	return rep.SaveMessage(messageToSave, role)
+	return rep.SaveMessage(ctx, messageToSave, role)
 }

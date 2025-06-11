@@ -2,14 +2,15 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/user"
+	"context"
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type BaseHandler func(bot *GPTBot, update *tgbotapi.Update)
-type StateHandler func(bot *GPTBot, update *tgbotapi.Update)
-type Command func(bot *GPTBot, update *tgbotapi.Update)
+type BaseHandler func(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
+type StateHandler func(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
+type Command func(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 
 type Dispatcher struct {
 	baseHandlers map[string]BaseHandler
@@ -53,9 +54,15 @@ func (d *Dispatcher) RegisterCommand(path string, command Command) {
 	d.commands[path] = command
 }
 
-func (d *Dispatcher) HandleUpdate(bot *GPTBot, update *tgbotapi.Update) {
+func (d *Dispatcher) HandleUpdate(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+
 	if update.CallbackQuery != nil {
-		d.baseHandlers["callback"](bot, update)
+		d.baseHandlers["callback"](ctx, bot, update)
 		return
 	}
 	if update.Message != nil && update.Message.IsCommand() {
@@ -65,34 +72,35 @@ func (d *Dispatcher) HandleUpdate(bot *GPTBot, update *tgbotapi.Update) {
 			log.Printf("received unknown command, %s", commandText)
 			return
 		}
-		cmd(bot, update)
+		cmd(ctx, bot, update)
 		return
 	}
 	if update.Message == nil || bot.ValidateUpdate(update) != nil {
 		return
 	}
 	if update.Message.Document != nil {
-		d.baseHandlers["document"](bot, update)
+		d.baseHandlers["document"](ctx, bot, update)
 		return
 	}
 	if update.Message.Photo != nil {
-		d.baseHandlers["photo"](bot, update)
+		d.baseHandlers["photo"](ctx, bot, update)
 		return
 	}
-	state, err := bot.userService.GetUserState(update.SentFrom().ID)
+	state, err := bot.userService.GetUserState(ctx, update.SentFrom().ID)
 	if err == nil && state != "" {
-		d.stateHandler[state](bot, update)
+		d.stateHandler[state](ctx, bot, update)
 		return
 	}
-	d.baseHandlers["message"](bot, update)
+	d.baseHandlers["message"](ctx, bot, update)
 }
 
 func (b *GPTBot) ValidateUpdate(update *tgbotapi.Update) error {
-	err := b.userService.ValidateTgUser(update.SentFrom())
+	ctx := context.Background()
+	err := b.userService.ValidateTgUser(ctx, update.SentFrom())
 	if err != nil {
 		log.Printf("got message (%s) from not authenticaded user %s", update.Message.Text, update.Message.From.UserName)
 		messageText := "Looks like you are not authenticated yet to use this bot. Please use /start command and wait while admin processes your request"
-		_, _ = b.chatService.SendMessage(MessageOut{ChatId: update.Message.Chat.ID, RepyToId: int64(update.Message.MessageID), Text: messageText})
+		_, _ = b.chatService.SendMessage(ctx, MessageOut{ChatId: update.Message.Chat.ID, RepyToId: int64(update.Message.MessageID), Text: messageText})
 	}
 	return err
 }

@@ -2,6 +2,7 @@ package openrouter
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,7 +20,7 @@ type Client struct {
 	apiKey  string
 }
 
-func (c *Client) GetChatCompletion(request ChatCompletionRequest) (*ChatCompletionResponse, error) {
+func (c *Client) GetChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	var completion ChatCompletionResponse
 	url := fmt.Sprintf("%s/chat/completions", c.baseUrl)
 	payload, err := json.Marshal(request)
@@ -30,6 +31,7 @@ func (c *Client) GetChatCompletion(request ChatCompletionRequest) (*ChatCompleti
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
 	response, err := c.client.Do(req)

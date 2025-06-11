@@ -4,6 +4,7 @@ import (
 	"amArbaoui/yaggptbot/app/config"
 	"context"
 	"log"
+	"runtime/debug"
 	"sync"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -52,7 +53,19 @@ func (b *GPTBot) StartPolling(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case update := <-updates:
-			b.Handle(&update)
+			handleCtx, cancel := context.WithCancel(ctx)
+			wg.Add(1)
+			go func(ctx context.Context, upd *tgbotapi.Update) {
+				defer func() {
+					if r := recover(); r != nil {
+						log.Printf("CRITICAL: Recovered from panic in handler. Panic: %v\n", r)
+						log.Printf("Trace:\n%s", debug.Stack())
+					}
+				}()
+				defer wg.Done()
+				defer cancel()
+				b.Handle(ctx, upd)
+			}(handleCtx, &update)
 		case <-ctx.Done():
 			log.Println("shutting down bot")
 			return
@@ -60,21 +73,29 @@ func (b *GPTBot) StartPolling(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-func (b *GPTBot) Handle(update *tgbotapi.Update) {
+func (b *GPTBot) Handle(ctx context.Context, update *tgbotapi.Update) {
 	if update.Message == nil && update.CallbackQuery == nil {
 		log.Printf("ignoring update, not a message, nor callback")
 		return
 	}
-	b.userDispatcher.HandleUpdate(b, update)
-
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+	b.userDispatcher.HandleUpdate(ctx, b, update)
 }
 
 func (b *GPTBot) TextReply(replyText string, m *tgbotapi.Message) ([]*tgbotapi.Message, error) {
+	return b.TextReplyWithContext(context.Background(), replyText, m)
+}
+
+func (b *GPTBot) TextReplyWithContext(ctx context.Context, replyText string, m *tgbotapi.Message) ([]*tgbotapi.Message, error) {
 	resp := MessageOut{
 		Text:     replyText,
 		RepyToId: int64(m.MessageID),
 		ChatId:   m.Chat.ID}
-	msg, err := b.chatService.SendMessage(resp)
+	msg, err := b.chatService.SendMessage(ctx, resp)
 	if err != nil {
 		log.Println(err)
 	}

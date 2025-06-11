@@ -2,20 +2,21 @@ package user
 
 import (
 	"amArbaoui/yaggptbot/app/storage"
+	"context"
 )
 
 type UserRepository interface {
-	DeleteUser(tgId int64) error
-	GetUsers() ([]storage.User, error)
-	GetUserByTgId(tgId int64) (*storage.User, error)
-	SaveUser(*User) error
-	UpdateUser(*User) error
-	GetUserPrompt(userId int64) (*storage.Prompt, error)
-	SetUserPrompt(*UserPrompt) error
-	RemoveUserPromt(userId int64) error
-	GetUserState(userId int64) (State, error)
-	SetUserState(userId int64, state State) error
-	ResetUserState(userId int64) error
-	GetUserModel(userId int64) (*storage.Model, error)
-	SetUserModel(model *UserModel) error
+	DeleteUser(ctx context.Context, tgId int64) error
+	GetUsers(ctx context.Context) ([]storage.User, error)
+	GetUserByTgId(ctx context.Context, tgId int64) (*storage.User, error)
+	SaveUser(ctx context.Context, user *User) error
+	UpdateUser(ctx context.Context, user *User) error
+	GetUserPrompt(ctx context.Context, userId int64) (*storage.Prompt, error)
+	SetUserPrompt(ctx context.Context, prompt *UserPrompt) error
+	RemoveUserPromt(ctx context.Context, userId int64) error
+	GetUserState(ctx context.Context, userId int64) (State, error)
+	SetUserState(ctx context.Context, userId int64, state State) error
+	ResetUserState(ctx context.Context, userId int64) error
+	GetUserModel(ctx context.Context, userId int64) (*storage.Model, error)
+	SetUserModel(ctx context.Context, model *UserModel) error
 }

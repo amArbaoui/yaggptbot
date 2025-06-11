@@ -5,6 +5,7 @@ import (
 	"amArbaoui/yaggptbot/app/llm"
 	"amArbaoui/yaggptbot/app/telegram"
 	"amArbaoui/yaggptbot/app/user"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -31,7 +32,8 @@ func (usr *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		ErrorResponse(err, "unprocessable request", http.StatusUnprocessableEntity, w, r)
 		return
 	}
-	err = usr.uservice.SaveUser(NewUserFromAddUserRequest(newUserRequest))
+	ctx := r.Context()
+	err = usr.uservice.SaveUser(ctx, NewUserFromAddUserRequest(newUserRequest))
 	if err != nil {
 		errResp := fmt.Sprintf("failed to create user: %s, error: %s", newUserRequest.TgUsername, err)
 		ErrorResponse(err, errResp, http.StatusInternalServerError, w, r)
@@ -42,11 +44,11 @@ func (usr *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if silent != "true" {
 		usr.greetUser(newUserRequest)
 	}
-
 }
 
 func (usr *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
-	userDetails, err := usr.uservice.GetUsersDetails()
+	ctx := r.Context()
+	userDetails, err := usr.uservice.GetUsersDetails(ctx)
 	errResp := "failed to get users"
 	if err != nil {
 		ErrorResponse(err, errResp, http.StatusInternalServerError, w, r)
@@ -54,7 +56,6 @@ func (usr *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(UserDetailsListFrom(userDetails))
-
 }
 
 func (usr *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +68,8 @@ func (usr *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		ErrorResponse(err, "unprocessable request", http.StatusUnprocessableEntity, w, r)
 		return
 	}
-	err = usr.uservice.UpdateUser(NewUserFromUpdateUserRequest(newUserRequest))
+	ctx := r.Context()
+	err = usr.uservice.UpdateUser(ctx, NewUserFromUpdateUserRequest(newUserRequest))
 	if err != nil {
 		ErrorResponse(err, errResp, http.StatusUnprocessableEntity, w, r)
 		return
@@ -84,13 +86,14 @@ func (usr *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		ErrorResponse(err, "invalid user ID", http.StatusInternalServerError, w, r)
 		return
 	}
-	_, err = usr.uservice.GetUserByTgId(tgId)
+	ctx := r.Context()
+	_, err = usr.uservice.GetUserByTgId(ctx, tgId)
 	if err != nil {
 		ErrorResponse(err, "user not found", http.StatusInternalServerError, w, r)
 		return
 	}
 
-	err = usr.uservice.DeleteUser(tgId)
+	err = usr.uservice.DeleteUser(ctx, tgId)
 
 	if err != nil {
 		ErrorResponse(err, errResp, http.StatusInternalServerError, w, r)
@@ -101,7 +104,9 @@ func (usr *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
+	ctx := context.Background()
 	_, err := usr.chatService.SendMessage(
+		ctx,
 		telegram.MessageOut{
 			Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.GreetUserMessage),
 			ChatId:   int64(newUserRequest.ChatId),
@@ -112,6 +117,7 @@ func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
 		log.Printf("[WARN] failed to send greeting message to %f due to %s", newUserRequest.TgId, err)
 	}
 	_, err = usr.chatService.SendMessage(
+		ctx,
 		telegram.MessageOut{
 			Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.HowToUseItMessage),
 			ChatId:   int64(newUserRequest.ChatId),
@@ -121,7 +127,6 @@ func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
 	if err != nil {
 		log.Printf("[WARN] failed to send usage message to %f due to %s", newUserRequest.TgId, err)
 	}
-
 }
 
 type LlmHandler struct {
@@ -137,15 +142,15 @@ func (l *LlmHandler) GetCompletion(w http.ResponseWriter, r *http.Request) {
 		ErrorResponse(err, "unprocessable request", http.StatusUnprocessableEntity, w, r)
 		return
 	}
+	ctx := context.Background()
 	llmReq := NewCompletionRequestMessageSlice(&completionRequestHolder)
-	resp, err := l.llmService.GetCompletionMessage(llmReq, "", config.DefaultModel) // TODO: select model
+	resp, err := l.llmService.GetCompletionMessage(ctx, llmReq, "", config.DefaultModel) // TODO: select model
 	if err != nil {
 		ErrorResponse(err, "failed to get completion", http.StatusUnprocessableEntity, w, r)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, resp)
-
 }
 
 func ErrorResponse(err error, errMsg string, status int, w http.ResponseWriter, r *http.Request) {

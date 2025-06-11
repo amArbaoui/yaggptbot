@@ -3,6 +3,7 @@ package llm
 import (
 	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/llm/openrouter"
+	"context"
 )
 
 type OpenRouterProvider struct {
@@ -14,7 +15,12 @@ func NewOpenrouterProvider(client *openrouter.Client, defaultPrompt string) *Ope
 	return &OpenRouterProvider{client: client, DefaultPrompt: defaultPrompt}
 
 }
-func (o *OpenRouterProvider) GetCompletionMessage(messages []CompletionRequestMessage, userPromt string, model string) (string, error) {
+func (o *OpenRouterProvider) GetCompletionMessage(ctx context.Context, messages []CompletionRequestMessage, userPromt string, model string) (string, error) {
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	default:
+	}
 	providerModel, ok := config.OpenRouterModelMapping[model]
 	if !ok {
 		return "", ErrProviderNotFound
@@ -57,7 +63,7 @@ func (o *OpenRouterProvider) GetCompletionMessage(messages []CompletionRequestMe
 		Model:    openrouter.Model(providerModel),
 		Messages: completionMessages,
 	}
-	completion, err := o.client.GetChatCompletion(req)
+	completion, err := o.client.GetChatCompletion(ctx, req)
 	if err != nil {
 		return "", err
 	}

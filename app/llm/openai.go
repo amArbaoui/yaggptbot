@@ -18,8 +18,7 @@ func NewOpenAiProvider(apiKey string, maxTokens int, defaultPrompt string) *Open
 	return &OpenAiProvider{Client: *client, MaxTokens: maxTokens, DefaultPrompt: defaultPrompt}
 }
 
-func (o *OpenAiProvider) GetCompletionMessage(messages []CompletionRequestMessage, userPromt string, model string) (string, error) {
-	ctx := context.Background()
+func (o *OpenAiProvider) GetCompletionMessage(ctx context.Context, messages []CompletionRequestMessage, userPromt string, model string) (string, error) {
 	openaiModel, ok := config.OpenaiModelMapping[model]
 	if !ok {
 		return "", ErrModelNotFound

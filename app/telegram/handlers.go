@@ -3,6 +3,7 @@ package telegram
 import (
 	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/llm"
+	"context"
 	"fmt"
 
 	"amArbaoui/yaggptbot/app/user"
@@ -14,25 +15,31 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
+func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+	
 	var promptText string
 	m := update.Message
-	llmCompetionRequest, err := bot.GetConversationChain(m)
+	llmCompetionRequest, err := bot.GetConversationChain(ctx, m)
 	if err != nil {
 		if errors.Is(err, ErrMessageNotFound) {
 			replyText := "Failed to find reply message(s). Please send your question as a new message or if my previous message were splitted, reply to the first chunk."
-			bot.TextReply(replyText, m)
+			bot.TextReplyWithContext(ctx, replyText, m)
 			return
 		}
 
 	}
 	llmCompetionRequest = append(llmCompetionRequest, llm.CompletionRequestMessage{Text: m.Text, Role: "user"})
-	err = bot.msgService.SaveMessage(m, "user")
+	err = bot.msgService.SaveMessage(ctx, m, "user")
 	if err != nil {
 		log.Println(err)
 	}
 
-	prompt, err := bot.userService.GetUserPromptByTgId(update.SentFrom().ID)
+	prompt, err := bot.userService.GetUserPromptByTgId(ctx, update.SentFrom().ID)
 	switch err {
 	case nil:
 		promptText = prompt.Prompt
@@ -43,56 +50,67 @@ func UserMesasgeHandler(bot *GPTBot, update *tgbotapi.Update) {
 		log.Println(err)
 	}
 
-	model, err := bot.userService.GetUserModelByTgId(update.SentFrom().ID)
+	model, err := bot.userService.GetUserModelByTgId(ctx, update.SentFrom().ID)
 	if err != nil {
 		log.Println(err)
 	}
-	llmResp, err := bot.llmService.GetCompletionMessage(llmCompetionRequest, promptText, model.Model)
+	llmResp, err := bot.llmService.GetCompletionMessage(ctx, llmCompetionRequest, promptText, model.Model)
 	if err != nil {
 		log.Println(err)
 
 	}
 
 	aiResp := MessageOut{Text: llmResp, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
-	messages, err := bot.chatService.SendMessage(aiResp)
+	messages, err := bot.chatService.SendMessage(ctx, aiResp)
 	if err != nil {
 		log.Printf("failed to send ai response, %s", err)
 		return
 	}
 
-	err = bot.msgService.SaveMessages(messages, "assistant")
+	err = bot.msgService.SaveMessages(ctx, messages, "assistant")
 	if err != nil {
 		log.Println(err)
 	}
 
 }
 
-func UserDocumentHandler(bot *GPTBot, update *tgbotapi.Update) {
+func UserDocumentHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+	
 	m := update.Message
 	text := "Documents not supported"
-	bot.TextReply(text, m)
+	bot.TextReplyWithContext(ctx, text, m)
 
 }
 
-func UserPhotoHandler(bot *GPTBot, update *tgbotapi.Update) {
+func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
 	var text string
 	var caption string
 	m := update.Message
-	err := bot.msgService.SaveMessage(m, "user")
+	err := bot.msgService.SaveMessage(ctx, m, "user")
 	if err != nil {
 		log.Println(err)
 	}
 	imageUrl, err := bot.botAPI.GetFileDirectURL(m.Photo[len(m.Photo)-1].FileID)
 	if err != nil {
 		text = "Failed to handle photo, please try again"
-		bot.TextReply(text, m)
+		bot.TextReplyWithContext(ctx, text, m)
 	}
 	if m.Caption != "" {
 		caption = m.Caption
 	} else {
 		caption = "Describe this image"
 	}
-	conversationChain, err := bot.GetConversationChain(m)
+	conversationChain, err := bot.GetConversationChain(ctx, m)
 	if err != nil {
 		log.Println(err)
 
@@ -103,17 +121,17 @@ func UserPhotoHandler(bot *GPTBot, update *tgbotapi.Update) {
 		ImageUrl: &imageUrl,
 	},
 	)
-	llmResp, err := bot.llmService.GetCompletionMessage(conversationChain, bot.config.DefaultPrompt, config.ChatGPT4o)
+	llmResp, err := bot.llmService.GetCompletionMessage(ctx, conversationChain, bot.config.DefaultPrompt, config.ChatGPT4o)
 	if err != nil {
 		log.Println(err)
 	}
-	msg, err := bot.TextReply(llmResp, m)
+	msg, err := bot.TextReplyWithContext(ctx, llmResp, m)
 	if err != nil {
 		log.Printf("failed to send ai response, %s", err)
 		return
 	}
 	for _, m := range msg {
-		err = bot.msgService.SaveMessage(m, "assistant")
+		err = bot.msgService.SaveMessage(ctx, m, "assistant")
 		if err != nil {
 			log.Println(err)
 		}
@@ -121,18 +139,24 @@ func UserPhotoHandler(bot *GPTBot, update *tgbotapi.Update) {
 
 }
 
-func CallbackHandler(bot *GPTBot, update *tgbotapi.Update) {
+func CallbackHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 	data := update.CallbackData()
 	if strings.HasPrefix(data, "user:") {
-		handleUserCallback(update, bot)
+		handleUserCallback(ctx, update, bot)
 	}
 	if strings.HasPrefix(data, "model:") {
-		handleModelSelectionCallback(update, bot)
+		handleModelSelectionCallback(ctx, update, bot)
 	}
 
 }
 
-func handleUserCallback(update *tgbotapi.Update, bot *GPTBot) {
+func handleUserCallback(ctx context.Context, update *tgbotapi.Update, bot *GPTBot) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+	
 	data := update.CallbackData()
 	split := strings.Split(data, ":")
 	operation := split[1]
@@ -140,6 +164,7 @@ func handleUserCallback(update *tgbotapi.Update, bot *GPTBot) {
 	userId, _ := strconv.Atoi(split[3])
 	if operation == "register" {
 		err := bot.userService.SaveUser(
+			ctx,
 			&user.User{
 				Id:     int64(userId),
 				TgName: userName,
@@ -152,6 +177,7 @@ func handleUserCallback(update *tgbotapi.Update, bot *GPTBot) {
 		}
 		if err == nil {
 			_, err := bot.chatService.SendMessage(
+				ctx,
 				MessageOut{
 					Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.GreetUserMessage),
 					ChatId:   int64(userId),
@@ -162,6 +188,7 @@ func handleUserCallback(update *tgbotapi.Update, bot *GPTBot) {
 				log.Println("failed to greet user")
 			}
 			_, err = bot.chatService.SendMessage(
+				ctx,
 				MessageOut{
 					Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.HowToUseItMessage),
 					ChatId:   int64(userId),
@@ -177,21 +204,27 @@ func handleUserCallback(update *tgbotapi.Update, bot *GPTBot) {
 	}
 }
 
-func handleModelSelectionCallback(update *tgbotapi.Update, bot *GPTBot) {
+func handleModelSelectionCallback(ctx context.Context, update *tgbotapi.Update, bot *GPTBot) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+	
 	var reply string
 	data := update.CallbackData()
 	split := strings.Split(data, ":")
 	operation := split[1]
 	modelName := split[2]
 	userId, _ := strconv.Atoi(split[3])
-	userEntity, err := bot.userService.GetUserByTgId(int64(userId))
+	userEntity, err := bot.userService.GetUserByTgId(ctx, int64(userId))
 	if err != nil {
 		reply = "error, failed to set model"
 		bot.botAPI.Send(tgbotapi.NewMessage(int64(userId), reply))
 		return
 	}
 	if operation == "set" {
-		err := bot.userService.SetUserModel(&user.UserModel{UserID: userEntity.Id, Model: modelName})
+		err := bot.userService.SetUserModel(ctx, &user.UserModel{UserID: userEntity.Id, Model: modelName})
 		if err != nil {
 			reply = "error, failed to set model"
 		}
@@ -201,19 +234,23 @@ func handleModelSelectionCallback(update *tgbotapi.Update, bot *GPTBot) {
 	}
 }
 
-func (b *GPTBot) GetConversationChain(m *tgbotapi.Message) ([]llm.CompletionRequestMessage, error) {
+func (b *GPTBot) GetConversationChain(ctx context.Context, m *tgbotapi.Message) ([]llm.CompletionRequestMessage, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	completionRequest := make([]llm.CompletionRequestMessage, 0)
 	if m.ReplyToMessage == nil {
 		return completionRequest, nil
 	}
-	messageChain, err := b.msgService.GetMessageChain(int64(m.ReplyToMessage.MessageID), b.botOptions.MaxConversationDepth)
+	messageChain, err := b.msgService.GetMessageChain(ctx, int64(m.ReplyToMessage.MessageID), b.botOptions.MaxConversationDepth)
 	if err != nil {
 		return completionRequest, err
 	}
 	for _, message := range messageChain {
 		completionRequest = append(completionRequest, llm.CompletionRequestMessage{Text: message.Text, Role: message.Role, ImageUrl: nil})
-
 	}
 	return completionRequest, nil
-
 }

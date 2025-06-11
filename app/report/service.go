@@ -5,6 +5,7 @@ import (
 	"amArbaoui/yaggptbot/app/telegram"
 	"amArbaoui/yaggptbot/app/util"
 	"bytes"
+	"context"
 	"log"
 	"text/template"
 	"time"
@@ -129,9 +130,9 @@ func (rs *ReportService) WeeklyMessagesCount(reportDate time.Time) (string, erro
 }
 
 func (rs *ReportService) SendReport(report string) {
-	_, err := rs.chatSrv.SendMessage(telegram.MessageOut{Text: tgbotapi.EscapeText(tgbotapi.ModeMarkdown, report), RepyToId: 0, ChatId: rs.chatId})
+	ctx := context.Background()
+	_, err := rs.chatSrv.SendMessage(ctx, telegram.MessageOut{Text: tgbotapi.EscapeText(tgbotapi.ModeMarkdown, report), RepyToId: 0, ChatId: rs.chatId})
 	if err != nil {
 		log.Println("failed to send report via telegram")
 	}
-
 }
