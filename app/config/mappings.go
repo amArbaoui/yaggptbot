@@ -24,6 +24,6 @@ var OpenRouterModelMapping = map[string]openrouter.Model{
 	ClaudeSonnet3Dot5: "anthropic/claude-3.5-sonnet",
 	ClaudeSonnet3Dot7: "anthropic/claude-3.7-sonnet",
 	ClaudeSonnet4:     "anthropic/claude-sonnet-4",
-	Gemini2Dot5Flash:  "google/gemini-2.5-flash-preview-05-20",
-	Gemini2Dot5Pro:    "google/gemini-2.5-pro-preview",
+	Gemini2Dot5Flash:  "google/gemini-2.5-flash",
+	Gemini2Dot5Pro:    "google/gemini-2.5-pro",
 }
