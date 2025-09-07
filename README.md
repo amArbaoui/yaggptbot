@@ -41,6 +41,10 @@ Run docker compose up
 
 
 ## Version History
+* 0.4.6
+    * Run in docker as non-privileged
+* 0.4.5
+    * Updated models
 * 0.4.4
     * Added gemini-2.5-flash, gemini-2.5-pro, claude-sonnet-4
     * Fixed openrouter client bugs, utf8 tg errors

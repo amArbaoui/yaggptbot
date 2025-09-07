@@ -1,16 +1,33 @@
-FROM golang:1.24.2 as builder
-ENV CGO_ENABLED=1
-WORKDIR /opt/yaggptbot
-COPY . .
-RUN go install -tags 'sqlite3' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.17.1
-RUN make build
+    FROM golang:1.24.2 as builder
 
-FROM alpine:3.20
-WORKDIR /opt/yaggptbot
-EXPOSE 8080
-RUN apk add --no-cache tzdata
-COPY --from=builder /opt/yaggptbot/app/storage storage
-COPY --from=builder /opt/yaggptbot/app/db/.gitkeep db/.gitkeep
-COPY --from=builder /opt/yaggptbot/main main
+    ENV CGO_ENABLED=1
+    ENV APP_DIR=/opt/yaggptbot
 
-CMD ["./main"]
+    WORKDIR ${APP_DIR}
+
+    COPY . .
+
+    RUN make build
+    RUN ls -lR
+
+    FROM alpine:3.20
+
+    ENV APP_DIR=/opt/yaggptbot
+    
+    RUN addgroup -S appgroup && adduser -S -u 1001 -G appgroup appuser && \
+        mkdir -p ${APP_DIR}/storage ${APP_DIR}/db && \
+        chown -R appuser:appgroup ${APP_DIR}
+
+    RUN apk add --no-cache tzdata
+
+    WORKDIR ${APP_DIR}
+
+    COPY --from=builder --chown=appuser:appgroup ${APP_DIR}/app/db/.gitkeep db/.gitkeep
+    COPY --from=builder --chown=appuser:appgroup ${APP_DIR}/app/storage storage
+    COPY --from=builder --chown=appuser:appgroup ${APP_DIR}/main .
+
+    EXPOSE 8080
+
+    USER appuser
+
+    CMD ["./main"]
