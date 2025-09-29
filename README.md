@@ -41,6 +41,8 @@ Run docker compose up
 
 
 ## Version History
+* 0.4.7
+    * Updated models
 * 0.4.6
     * Run in docker as non-privileged
 * 0.4.5

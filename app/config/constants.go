@@ -30,12 +30,11 @@ const (
 		Don't tell user about it, it's internal detail\n`
 
 	ChatGPT4o         = "chatgpt-4o"
-	ClaudeSonnet3Dot5 = "claude-3.5-sonnet"
 	ClaudeSonnet3Dot7 = "claude-3.7-sonnet"
 	ClaudeSonnet4     = "claude-4-sonnet"
 	Gemini2Dot5Flash  = "gemini-2.5-flash"
 	Gemini2Dot5Pro    = "gemini-2.5-pro"
-	Gemini2Dot0       = "gemini-2.0-flash"
+	DeepseekV3Dot1    = "deepseek-chat-v3.1"
 )
 
-const DefaultModel = Gemini2Dot5Flash
+const DefaultModel = DeepseekV3Dot1
