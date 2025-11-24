@@ -58,10 +58,14 @@ func (o *OpenRouterProvider) GetCompletionMessage(ctx context.Context, messages 
 			Role:    message.Role,
 			Content: completionContent})
 	}
-
+	reasoningEffort, ok := config.ModelReasoningEffort[model]
+	if !ok {
+		reasoningEffort = "minimal"
+	}
 	req := openrouter.ChatCompletionRequest{
-		Model:    openrouter.Model(providerModel),
-		Messages: completionMessages,
+		Model:     openrouter.Model(providerModel),
+		Messages:  completionMessages,
+		Reasoning: openrouter.Reasoning{Effort: reasoningEffort},
 	}
 	completion, err := o.client.GetChatCompletion(ctx, req)
 	if err != nil {

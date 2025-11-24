@@ -3,10 +3,14 @@ package openrouter
 type Model string
 
 type ChatCompletionRequest struct {
-	Model    Model               `json:"model"`
-	Messages []CompletionMessage `json:"messages"`
+	Model     Model               `json:"model"`
+	Reasoning Reasoning           `json:"reasoning"`
+	Messages  []CompletionMessage `json:"messages"`
 }
-
+type Reasoning struct {
+	Effort  string `json:"effort,omitempty"`
+	Enabled bool   `json:"enabled,omitempty"`
+}
 type CompletionMessage struct {
 	Role    string      `json:"role"`
 	Content interface{} `json:"content"`
