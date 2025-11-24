@@ -28,6 +28,9 @@ func UserRouter(s *Server) chi.Router {
 	r.Post("/", userHandler.CreateUser)
 	r.Delete("/{TgId}", userHandler.DeleteUser)
 	r.Put("/", userHandler.UpdateUser)
+	r.Put("/{TgId}/model/{NewModel}", userHandler.UpdateUserModel)
+	r.Put("/model/default", userHandler.UpdateDefaultModel)
+
 	return r
 }
 
@@ -36,6 +39,7 @@ func LLMRouter(s *Server) chi.Router {
 	r.Use(middleware.Logger)
 	r.Use(apiKeyAuthMiddleware(s.apiKey))
 	llmHandler := LlmHandler{llmService: s.llmService}
+	r.Get("/models", llmHandler.GetModels)
 	r.Post("/chat", llmHandler.GetCompletion)
 	return r
 }

@@ -14,13 +14,14 @@ func NewUserFromDbEntity(entity *storage.User) *User {
 
 type UserDetails struct {
 	User
+	Model     string
 	CreatedAt int64
 	UpdatedAt *int64
 }
 
-func NewUserDetails(entity *storage.User) *UserDetails {
+func NewUserDetails(entity *storage.User, model string) *UserDetails {
 	usr := NewUserFromDbEntity(entity)
-	return &UserDetails{User: *usr, CreatedAt: entity.CreatedAt, UpdatedAt: entity.UpdatedAt}
+	return &UserDetails{User: *usr, Model: model, CreatedAt: entity.CreatedAt, UpdatedAt: entity.UpdatedAt}
 }
 
 type UserPrompt struct {

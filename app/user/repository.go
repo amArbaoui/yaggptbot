@@ -1,6 +1,7 @@
 package user
 
 import (
+	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/storage"
 	"context"
 	"fmt"
@@ -24,7 +25,9 @@ const (
 	sqlRemoveUserState  = "delete from user_state where user_id = $1"
 	sqlRemoveUserModel  = "delete from user_model where user_id = $1"
 	sqlSetUserModel     = "insert or replace into user_model (user_id, model, created_at, updated_at) values (:user_id, :model, :created_at, :updated_at)"
-	sqlGetUserModel     = "select  user_id, model, created_at, updated_at from user_model where user_id = $1"
+	sqlGetUserModel     = "select user_id, model, created_at, updated_at from user_model where user_id = $1"
+	sqlGetAllUserModel  = "select user_id, model, created_at, updated_at from user_model"
+	sqlSetDefaultModel  = "update user_model set model =$1"
 )
 
 type UserDbRepository struct {
@@ -56,11 +59,30 @@ func (rep *UserDbRepository) SaveUser(ctx context.Context, user *User) error {
 	if err != nil {
 		return fmt.Errorf("%w:%v", ErrUserNotCreated, err)
 	}
-	newUser = storage.User{ID: maxUserId + 1, TgId: user.Id, ChatId: user.ChatId, TgUsername: user.TgName, CreatedAt: time.Now().Unix(), UpdatedAt: nil}
-	_, err = rep.db.NamedExecContext(ctx, sqlSaveUser, &newUser)
+	userId := maxUserId + 1
+	newUser = storage.User{ID: userId, TgId: user.Id, ChatId: user.ChatId, TgUsername: user.TgName, CreatedAt: time.Now().Unix(), UpdatedAt: nil}
+	defaultModel := config.DefaultModel
+	userModel := storage.Model{UserID: userId, Model: &defaultModel, CreatedAt: time.Now().Unix(), UpdatedAt: nil}
+
+	tx := rep.db.MustBegin()
+	_, err = tx.NamedExecContext(ctx, sqlSaveUser, &newUser)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("%w:%v", ErrUserNotCreated, err)
+
+	}
+	_, err = tx.NamedExecContext(ctx, sqlSetUserModel, &userModel)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("%w:%v", ErrUserNotCreated, err)
+
+	}
+	err = tx.Commit()
 	if err != nil {
 		return fmt.Errorf("%w:%v", ErrUserNotCreated, err)
+
 	}
+
 	return nil
 }
 
@@ -120,11 +142,19 @@ func (rep *UserDbRepository) ResetUserState(ctx context.Context, userId int64) e
 	return err
 }
 
+func (rep *UserDbRepository) GetAllUsersModels(ctx context.Context) ([]storage.Model, error) {
+	var userModels = []storage.Model{}
+	err := rep.db.SelectContext(ctx, &userModels, sqlGetAllUserModel)
+	if err != nil {
+		return nil, err
+	}
+	return userModels, nil
+}
 func (rep *UserDbRepository) GetUserModel(ctx context.Context, userId int64) (*storage.Model, error) {
 	var userModel storage.Model
 	err := rep.db.GetContext(ctx, &userModel, sqlGetUserModel, userId)
 	if err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrModelNotSet, err)
+		return nil, err
 	}
 	return &userModel, nil
 }
@@ -139,6 +169,16 @@ func (rep *UserDbRepository) SetUserModel(ctx context.Context, model *UserModel)
 	tx := rep.db.MustBegin()
 	tx.MustExecContext(ctx, sqlRemoveUserModel, model.UserID)
 	tx.NamedExecContext(ctx, sqlSetUserModel, &userModel)
+	err := tx.Commit()
+	if err != nil {
+		return fmt.Errorf("%w:%v", ErrModelNotSet, err)
+	}
+	return nil
+}
+
+func (rep *UserDbRepository) SetDefaultModel(ctx context.Context, model string) error {
+	tx := rep.db.MustBegin()
+	tx.MustExecContext(ctx, sqlSetDefaultModel, model)
 	err := tx.Commit()
 	if err != nil {
 		return fmt.Errorf("%w:%v", ErrModelNotSet, err)

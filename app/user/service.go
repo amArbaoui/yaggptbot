@@ -48,8 +48,20 @@ func (us *UserServiceImpl) GetUsersDetails(ctx context.Context) ([]UserDetails, 
 	if err != nil {
 		return usersDetails, err
 	}
+	models, err := us.rep.GetAllUsersModels(ctx)
+	if err != nil {
+		return usersDetails, err
+	}
+	userModelMap := make(map[int64]string)
+	for _, m := range models {
+		userModelMap[m.UserID] = *m.Model
+	}
 	for _, elem := range entities {
-		usersDetails = append(usersDetails, *NewUserDetails(&elem))
+		model, foundModel := userModelMap[elem.ID]
+		if !foundModel {
+			model = config.DefaultModel
+		}
+		usersDetails = append(usersDetails, *NewUserDetails(&elem, model))
 	}
 	return usersDetails, nil
 }
@@ -106,6 +118,13 @@ func (us *UserServiceImpl) GetUserModelByTgId(ctx context.Context, tgId int64) (
 
 func (us *UserServiceImpl) SetUserModel(ctx context.Context, model *UserModel) error {
 	return us.rep.SetUserModel(ctx, model)
+}
+
+func (us *UserServiceImpl) SetDefaultModel(ctx context.Context, model string) error {
+	if _, ok := config.ModelMap[model]; !ok {
+		return ErrModelNotFound
+	}
+	return us.rep.SetDefaultModel(ctx, model)
 }
 
 func (us *UserServiceImpl) RemoveUserPromt(ctx context.Context, tgId int64) error {

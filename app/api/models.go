@@ -15,6 +15,7 @@ type UserDetails struct {
 	TgId       int64  `json:"tg_id"`
 	ChatId     int64  `json:"chat_id"`
 	TgUsername string `json:"tg_username"`
+	Model      string `json:"model"`
 	CreatedAt  int64  `json:"created_at"`
 	UpdatedAt  *int64 `json:"updated_at"`
 }
@@ -56,6 +57,7 @@ func NewUserDetails(ud *user.UserDetails) *UserDetails {
 	return &UserDetails{TgId: ud.ChatId,
 		ChatId:     ud.ChatId,
 		TgUsername: ud.TgName,
+		Model:      ud.Model,
 		CreatedAt:  ud.CreatedAt,
 		UpdatedAt:  ud.UpdatedAt,
 	}

@@ -103,6 +103,55 @@ func (usr *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "user with tgId %s deleted\n", tgIdText)
 }
 
+func (usr *UserHandler) UpdateUserModel(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	tgIdText := chi.URLParam(r, "TgId")
+	model := chi.URLParam(r, "NewModel")
+	if _, ok := config.ModelMap[model]; !ok {
+		ErrorResponse(fmt.Errorf("model not found"), fmt.Sprintf("invalid model %s", model), http.StatusInternalServerError, w, r)
+		return
+	}
+
+	tgId, err := strconv.ParseInt(tgIdText, 10, 64)
+	if err != nil {
+		ErrorResponse(err, "invalid user ID", http.StatusInternalServerError, w, r)
+		return
+	}
+	userToUpdate, err := usr.uservice.GetUserByTgId(ctx, tgId)
+	if err != nil {
+		ErrorResponse(err, "user not found", http.StatusInternalServerError, w, r)
+		return
+	}
+
+	err = usr.uservice.SetUserModel(ctx, &user.UserModel{UserID: userToUpdate.Id, Model: model})
+
+	if err != nil {
+		ErrorResponse(err, fmt.Sprintf("failed to update user model %s", tgIdText), http.StatusInternalServerError, w, r)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "user with tgId %s model updated to %s \n", tgIdText, model)
+}
+
+func (usr *UserHandler) UpdateDefaultModel(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	model := r.URL.Query().Get("model")
+	if _, ok := config.ModelMap[model]; !ok {
+		ErrorResponse(fmt.Errorf("model not found"), fmt.Sprintf("invalid model %s", model), http.StatusInternalServerError, w, r)
+	}
+
+	err := usr.uservice.SetDefaultModel(ctx, model)
+
+	if err != nil {
+		ErrorResponse(err, user.ErrModelNotSet.Error(), http.StatusInternalServerError, w, r)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "default model %s set\n", model)
+}
+
 func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
 	ctx := context.Background()
 	_, err := usr.chatService.SendMessage(
@@ -151,6 +200,15 @@ func (l *LlmHandler) GetCompletion(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, resp)
+}
+func (l *LlmHandler) GetModels(w http.ResponseWriter, r *http.Request) {
+	encoder := json.NewEncoder(w)
+	models := make([]string, 0, len(config.ModelMap))
+	for k := range config.ModelMap {
+		models = append(models, k)
+	}
+	w.WriteHeader(http.StatusOK)
+	encoder.Encode(models)
 }
 
 func ErrorResponse(err error, errMsg string, status int, w http.ResponseWriter, r *http.Request) {

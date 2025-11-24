@@ -17,6 +17,8 @@ type UserRepository interface {
 	GetUserState(ctx context.Context, userId int64) (State, error)
 	SetUserState(ctx context.Context, userId int64, state State) error
 	ResetUserState(ctx context.Context, userId int64) error
+	GetAllUsersModels(ctx context.Context) ([]storage.Model, error)
 	GetUserModel(ctx context.Context, userId int64) (*storage.Model, error)
 	SetUserModel(ctx context.Context, model *UserModel) error
+	SetDefaultModel(ctx context.Context, model string) error
 }
