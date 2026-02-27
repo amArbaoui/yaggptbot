@@ -21,7 +21,7 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 		return
 	default:
 	}
-	
+
 	var promptText string
 	m := update.Message
 	llmCompetionRequest, err := bot.GetConversationChain(ctx, m)
@@ -80,7 +80,7 @@ func UserDocumentHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Upda
 		return
 	default:
 	}
-	
+
 	m := update.Message
 	text := "Documents not supported"
 	bot.TextReplyWithContext(ctx, text, m)
@@ -121,7 +121,7 @@ func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 		ImageUrl: &imageUrl,
 	},
 	)
-	llmResp, err := bot.llmService.GetCompletionMessage(ctx, conversationChain, bot.config.DefaultPrompt, config.ChatGPT4o)
+	llmResp, err := bot.llmService.GetCompletionMessage(ctx, conversationChain, bot.config.DefaultPrompt, config.Gpt5Dot1Chat)
 	if err != nil {
 		log.Println(err)
 	}
@@ -156,7 +156,7 @@ func handleUserCallback(ctx context.Context, update *tgbotapi.Update, bot *GPTBo
 		return
 	default:
 	}
-	
+
 	data := update.CallbackData()
 	split := strings.Split(data, ":")
 	operation := split[1]
@@ -210,7 +210,7 @@ func handleModelSelectionCallback(ctx context.Context, update *tgbotapi.Update, 
 		return
 	default:
 	}
-	
+
 	var reply string
 	data := update.CallbackData()
 	split := strings.Split(data, ":")

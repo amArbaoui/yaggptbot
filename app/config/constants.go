@@ -29,7 +29,6 @@ const (
 		You should reply using STRICTLY valid telegram markdown v1 markup.
 		Don't tell user about it, it's internal detail\n`
 
-	ChatGPT4o         = "chatgpt-4o"
 	Gpt5Dot1Chat      = "chatgpt-5.1"
 	ClaudeSonnet3Dot7 = "claude-3.7-sonnet"
 	ClaudeSonnet4     = "claude-4-sonnet"

@@ -7,7 +7,6 @@ import (
 )
 
 var ModelMap = map[string]string{
-	ChatGPT4o:         OpenAI,
 	ClaudeSonnet3Dot7: OpenRouter,
 	ClaudeSonnet4:     OpenRouter,
 	Gemini2Dot5Flash:  OpenRouter,
@@ -17,7 +16,6 @@ var ModelMap = map[string]string{
 }
 
 var ModelReasoningEffort = map[string]string{
-	ChatGPT4o:         "none",
 	ClaudeSonnet3Dot7: "none",
 	ClaudeSonnet4:     "none",
 	Gemini2Dot5Flash:  "none",
@@ -26,7 +24,7 @@ var ModelReasoningEffort = map[string]string{
 	Gpt5Dot1Chat:      "none",
 }
 var OpenaiModelMapping = map[string]string{
-	ChatGPT4o: openai.GPT4oLatest,
+	Gpt5Dot1Chat: openai.GPT5ChatLatest,
 }
 
 var OpenRouterModelMapping = map[string]openrouter.Model{
