@@ -1,5 +1,7 @@
 .vscode
+.idea
 *.db
 *.env
+.envrc
 .scripts
 .DS_Store

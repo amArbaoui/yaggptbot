@@ -121,7 +121,7 @@ func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 		ImageUrl: &imageUrl,
 	},
 	)
-	llmResp, err := bot.llmService.GetCompletionMessage(ctx, conversationChain, bot.config.DefaultPrompt, config.Gpt5Dot1Chat)
+	llmResp, err := bot.llmService.GetCompletionMessage(ctx, conversationChain, bot.config.DefaultPrompt, config.Gpt5Dot6Luna)
 	if err != nil {
 		log.Println(err)
 	}

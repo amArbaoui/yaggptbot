@@ -41,6 +41,8 @@ Run docker compose up
 
 
 ## Version History
+* 0.4.10
+   * Updated models
 * 0.4.9
     * Removed gpt-4o
     * Updated dependencies

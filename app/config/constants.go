@@ -29,12 +29,10 @@ const (
 		You should reply using STRICTLY valid telegram markdown v1 markup.
 		Don't tell user about it, it's internal detail\n`
 
-	Gpt5Dot1Chat      = "chatgpt-5.1"
-	ClaudeSonnet3Dot7 = "claude-3.7-sonnet"
-	ClaudeSonnet4     = "claude-4-sonnet"
-	Gemini2Dot5Flash  = "gemini-2.5-flash"
-	Gemini2Dot5Pro    = "gemini-2.5-pro"
-	DeepseekV3Dot1    = "deepseek-chat-v3.1"
+	Gpt5Dot6Luna     = "chatgpt-5.6-luna"
+	ClaudeSonnet5    = "claude-sonnet-5"
+	Gemini3Dot7Flash = "gemini-3.7-flash"
+	DeepseekV4Flash  = "deepseek-chat-v3.1"
 )
 
-const DefaultModel = Gpt5Dot1Chat
+const DefaultModel = Gpt5Dot6Luna
