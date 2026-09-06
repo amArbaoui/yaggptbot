@@ -5,11 +5,11 @@ import (
 	"log"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 const (
@@ -18,7 +18,7 @@ const (
 )
 
 func GetDB() *sqlx.DB {
-	db, err := sqlx.Connect("sqlite3", DbPath)
+	db, err := sqlx.Connect("sqlite", DbPath)
 	if err != nil {
 		log.Fatalf("failed to connect database %v", err)
 	}
@@ -30,7 +30,7 @@ func GetDB() *sqlx.DB {
 }
 
 func runMigrations(db *sqlx.DB) error {
-	driver, err := sqlite3.WithInstance(db.DB, &sqlite3.Config{})
+	driver, err := sqlite.WithInstance(db.DB, &sqlite.Config{})
 	if err != nil {
 		return err
 	}

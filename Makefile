@@ -5,7 +5,9 @@ GHCR_USER ?=
 GHCR_TOKEN ?=
 
 build:
-	CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main  -ldflags='-w -s -extldflags "-static"' app/main.go
+	GOOS=linux go build -a -installsuffix cgo -o main  -ldflags='-w -s -extldflags "-static"' app/main.go
+build_local:
+	go build -a -installsuffix cgo -o main  -ldflags='-w -s -extldflags "-static"' -o app/yaggptbot app/main.go
 run:
 	docker compose up -d
 docker_build:

@@ -1,4 +1,4 @@
-    FROM golang:1.24.2 as builder
+    FROM golang:1.25.0 as builder
 
     ENV CGO_ENABLED=1
     ENV APP_DIR=/opt/yaggptbot
@@ -13,7 +13,7 @@
     FROM alpine:3.20
 
     ENV APP_DIR=/opt/yaggptbot
-    
+
     RUN addgroup -S appgroup && adduser -S -u 1001 -G appgroup appuser && \
         mkdir -p ${APP_DIR}/storage ${APP_DIR}/db && \
         chown -R appuser:appgroup ${APP_DIR}
