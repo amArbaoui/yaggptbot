@@ -1,33 +1,33 @@
-    FROM golang:1.25.0 as builder
+FROM golang:1.25.0 AS builder
 
-    ENV CGO_ENABLED=1
-    ENV APP_DIR=/opt/yaggptbot
+ENV APP_DIR=/opt/yaggptbot \
+    CGO_ENABLED=0 \
+    GOOS=linux
 
-    WORKDIR ${APP_DIR}
+WORKDIR ${APP_DIR}
 
-    COPY . .
+COPY . .
 
-    RUN make build
-    RUN ls -lR
+RUN go build -trimpath -ldflags="-s -w" -o main ./app
 
-    FROM alpine:3.20
+FROM alpine:3.20
 
-    ENV APP_DIR=/opt/yaggptbot
+ENV APP_DIR=/opt/yaggptbot
 
-    RUN addgroup -S appgroup && adduser -S -u 1001 -G appgroup appuser && \
-        mkdir -p ${APP_DIR}/storage ${APP_DIR}/db && \
-        chown -R appuser:appgroup ${APP_DIR}
+RUN addgroup -S appgroup && adduser -S -u 1001 -G appgroup appuser && \
+    mkdir -p ${APP_DIR}/storage ${APP_DIR}/db && \
+    chown -R appuser:appgroup ${APP_DIR}
 
-    RUN apk add --no-cache tzdata
+RUN apk add --no-cache tzdata
 
-    WORKDIR ${APP_DIR}
+WORKDIR ${APP_DIR}
 
-    COPY --from=builder --chown=appuser:appgroup ${APP_DIR}/app/db/.gitkeep db/.gitkeep
-    COPY --from=builder --chown=appuser:appgroup ${APP_DIR}/app/storage storage
-    COPY --from=builder --chown=appuser:appgroup ${APP_DIR}/main .
+COPY --from=builder --chown=appuser:appgroup ${APP_DIR}/app/db/.gitkeep db/.gitkeep
+COPY --from=builder --chown=appuser:appgroup ${APP_DIR}/app/storage storage
+COPY --from=builder --chown=appuser:appgroup ${APP_DIR}/main .
 
-    EXPOSE 8080
+EXPOSE 8080
 
-    USER appuser
+USER appuser
 
-    CMD ["./main"]
+CMD ["./main"]

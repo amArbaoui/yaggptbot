@@ -12,8 +12,55 @@ import (
 )
 
 const (
-	sqlGetMessge   = "select chat_id, message_id, reply_id, message_text, role, created_at, updated_at from message where message_id = $1 and role != 'system'"
-	sqlSaveMessage = "insert into message (chat_id, message_id, reply_id, message_text, role, created_at, updated_at) values (:chat_id, :message_id, :reply_id, :message_text, :role, :created_at, :updated_at)"
+	sqlGetMessge       = "select chat_id, message_id, reply_id, message_text, role, created_at, updated_at from message where message_id = $1 and role != 'system'"
+	sqlSaveMessage     = "insert into message (chat_id, message_id, reply_id, message_text, role, created_at, updated_at) values (:chat_id, :message_id, :reply_id, :message_text, :role, :created_at, :updated_at)"
+	sqlGetMessageChain = `
+	with recursive x as (
+		select
+			chat_id,
+			message_id,
+			reply_id,
+			message_text,
+			"role",
+			created_at,
+			updated_at,
+			0 as depth
+		from
+			message
+		where
+			message_id = $1
+			and role != 'system'
+		union all
+		select
+			m.chat_id,
+			m.message_id,
+			m.reply_id,
+			m.message_text,
+			m."role",
+			m.created_at,
+			m.updated_at,
+			x.depth + 1
+		from
+			message m
+		join x on
+			m.message_id = x.reply_id
+		where
+			x.reply_id is not null
+			and x.reply_id > 0
+			and x.depth + 1 < $2
+			and m.role != 'system'
+	  )
+		select
+			chat_id,
+			message_id,
+			reply_id,
+			message_text,
+			"role",
+			created_at,
+			updated_at
+		from x
+		order by depth desc;
+	`
 )
 
 type MessageDbRepository struct {
@@ -25,33 +72,28 @@ func (rep *MessageDbRepository) GetMessageById(ctx context.Context, messageId in
 	var msg storage.Message
 	err := rep.db.Get(&msg, sqlGetMessge, messageId)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrMessageNotFound, err)
+		return nil, fmt.Errorf("%w: %v", storage.ErrMessageNotFound, err)
 	}
-	decodedB64MessageText, err := storage.DecodeKeyFromString(msg.Text)
+	decoded, err := storage.DecodeStoredText(msg.Text, *rep.encryptService)
 	if err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrMessageNotDecoded, err)
+		return nil, err
 	}
-	decodedBytes, err := rep.encryptService.Decrypt(decodedB64MessageText)
-	if err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrMessageNotDecoded, err)
-	}
-	msg.Text = string(decodedBytes)
+	msg.Text = decoded
 	return &msg, nil
 }
 
 func (rep *MessageDbRepository) GetMessageChain(ctx context.Context, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
-	var replyMessageId int64
-	depth := 0
-	replyMessageId = topMessageId
 	messageChain := make([]*storage.Message, 0)
-	for replyMessageId > 0 && depth < maxConversationDepth {
-		reply, err := rep.GetMessageById(ctx, replyMessageId)
+	err := rep.db.SelectContext(ctx, &messageChain, sqlGetMessageChain, topMessageId, maxConversationDepth)
+	if err != nil {
+		return messageChain, err
+	}
+	for _, m := range messageChain {
+		decoded, err := storage.DecodeStoredText(m.Text, *rep.encryptService)
 		if err != nil {
-			return nil, err
+			return messageChain, err
 		}
-		messageChain = append(messageChain, reply)
-		replyMessageId = reply.RepyToTgMsgId
-		depth++
+		m.Text = decoded
 	}
 	return messageChain, nil
 }
@@ -64,7 +106,7 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 	}
 	encodedMessageText, err := rep.encryptService.Encrypt([]byte(message.Text))
 	if err != nil {
-		return fmt.Errorf("%w:%v", ErrMessageNotEncoded, err)
+		return fmt.Errorf("%w:%v", storage.ErrMessageNotEncoded, err)
 	}
 	b64DecodedMessageText := storage.EncodeKeyToString(encodedMessageText)
 	newMessage = storage.Message{
@@ -78,7 +120,7 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 	}
 	_, err = rep.db.NamedExec(sqlSaveMessage, &newMessage)
 	if err != nil {
-		return fmt.Errorf("%w:%v", ErrMessageNotCreated, err)
+		return fmt.Errorf("%w:%v", storage.ErrMessageNotCreated, err)
 	}
 	return nil
 }

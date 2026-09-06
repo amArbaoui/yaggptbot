@@ -5,13 +5,13 @@ GHCR_USER ?=
 GHCR_TOKEN ?=
 
 build:
-	GOOS=linux go build -a -installsuffix cgo -o main  -ldflags='-w -s -extldflags "-static"' app/main.go
+	CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-w -s' -o main ./app
 build_local:
-	go build -a -installsuffix cgo -o main  -ldflags='-w -s -extldflags "-static"' -o app/yaggptbot app/main.go
+	CGO_ENABLED=0 go build -trimpath -ldflags='-w -s' -o app/yaggptbot ./app
 run:
 	docker compose up -d
 docker_build:
-	docker build -t ghcr.io/$(GHCR_USER)/$(GHRCR_REPO)/$(IMAGE_NAME):$(TAG) .
+	docker build --platform linux/amd64 -t ghcr.io/$(GHCR_USER)/$(GHRCR_REPO)/$(IMAGE_NAME):$(TAG) .
 docker_login:
 	docker login ghcr.io -u $(GHCR_USER) -p $(GHCR_TOKEN)
 docker_push:

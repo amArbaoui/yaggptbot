@@ -41,6 +41,10 @@ Run docker compose up
 
 
 ## Version History
+* 0.4.11
+   * Updated dependencies, go version
+   * Removed CGO
+   * Optimized fetching message chain from db
 * 0.4.10
    * Updated models
 * 0.4.9

@@ -82,3 +82,15 @@ func EncodeKeyToString(key []byte) string {
 func DecodeKeyFromString(keyStr string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(keyStr)
 }
+
+func DecodeStoredText(text string, encryptService EncryptionService) (string, error) {
+	decodedB64Text, err := DecodeKeyFromString(text)
+	if err != nil {
+		return "", fmt.Errorf("%w:%v", ErrMessageNotDecoded, err)
+	}
+	decodedBytes, err := encryptService.Decrypt(decodedB64Text)
+	if err != nil {
+		return "", fmt.Errorf("%w:%v", ErrMessageNotDecoded, err)
+	}
+	return string(decodedBytes), nil
+}
