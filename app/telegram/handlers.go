@@ -3,6 +3,7 @@ package telegram
 import (
 	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/llm"
+	"amArbaoui/yaggptbot/app/storage"
 	"context"
 	"fmt"
 
@@ -26,7 +27,7 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 	m := update.Message
 	llmCompetionRequest, err := bot.GetConversationChain(ctx, m)
 	if err != nil {
-		if errors.Is(err, ErrMessageNotFound) {
+		if errors.Is(err, storage.ErrMessageNotFound) {
 			replyText := "Failed to find reply message(s). Please send your question as a new message or if my previous message were splitted, reply to the first chunk."
 			bot.TextReplyWithContext(ctx, replyText, m)
 			return
