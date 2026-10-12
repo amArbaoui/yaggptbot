@@ -11,7 +11,7 @@ import (
 )
 
 type LlmService interface {
-	GetCompletionMessage(ctx context.Context, messages []llm.CompletionRequestMessage, prompt string, model string) (string, error)
+	GetCompletionMessage(ctx context.Context, messages []llm.CompletionRequestMessage, prompt string, model string, opts llm.CompletionOptions) (string, error)
 }
 
 type MessageService interface {

@@ -164,7 +164,8 @@ func (b *GPTBot) answer(ctx context.Context, m *tgbotapi.Message, conversation [
 		model = config.DefaultVisionModel
 	}
 	stopTyping := b.keepTyping(ctx, m.Chat.ID)
-	llmResp, err := b.llmService.GetCompletionMessage(ctx, conversation, b.systemPrompt(ctx, m.From.ID), model)
+	opts := llm.CompletionOptions{WebTools: config.WebToolsEnabled}
+	llmResp, err := b.llmService.GetCompletionMessage(ctx, conversation, b.systemPrompt(ctx, m.From.ID), model, opts)
 	stopTyping()
 	if err != nil {
 		b.replyLlmError(ctx, m, model, err)

@@ -19,7 +19,8 @@ func NewOpenAiProvider(apiKey string, maxTokens int, defaultPrompt string) *Open
 	return &OpenAiProvider{Client: *client, MaxTokens: maxTokens, DefaultPrompt: defaultPrompt}
 }
 
-func (o *OpenAiProvider) GetCompletionMessage(ctx context.Context, messages []CompletionRequestMessage, userPromt string, model string) (string, error) {
+func (o *OpenAiProvider) GetCompletionMessage(ctx context.Context, messages []CompletionRequestMessage, userPromt string, model string, opts CompletionOptions) (string, error) {
+	// web tools are OpenRouter server tools, the request is answered without them
 	openaiModel, ok := config.OpenaiModelMapping[model]
 	if !ok {
 		return "", ErrModelNotFound

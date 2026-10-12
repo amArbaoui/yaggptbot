@@ -82,6 +82,7 @@ func (ch *ChatServiceImpl) send(chatId int64, replyToId int64, text string) (*tg
 		msgConfig.ReplyToMessageID = int(replyToId)
 	}
 	msgConfig.ParseMode = tgbotapi.ModeHTML
+	msgConfig.DisableWebPagePreview = true
 	msg, err := ch.botApi.Send(msgConfig)
 	if err != nil {
 		log.Printf("failed to send formatted message, sending plain text: %v", err)

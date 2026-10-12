@@ -114,3 +114,11 @@ func TestPlain(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+func TestRenderSourcesList(t *testing.T) {
+	got := Render("Answer.\n\n**Sources:**\n1. [Go (blog)](<https://go.dev/blog?a=1&b=2>)", 4096)
+	expected := "Answer.\n\n<b>Sources:</b>\n\n1. <a href=\"https://go.dev/blog?a=1&amp;b=2\">Go (blog)</a>"
+	if len(got) != 1 || got[0] != expected {
+		t.Errorf("expected %q, got %q", expected, got)
+	}
+}

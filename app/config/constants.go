@@ -16,7 +16,10 @@ const HowToUseItMessage = `🚀 Let's get started!
 3. Images
    - Send a photo, optionally with a caption, to ask about it.
 
-4. Commands
+4. Web
+   - The bot searches the web when it needs fresh information, and can read links you send.
+
+5. Commands
    - /new - start a new conversation
    - /setmodel - choose the model
    - /promptset - set a custom prompt, the bot will ask for its text
@@ -66,6 +69,19 @@ const (
 	ClaudeSonnet5    = "claude-sonnet-5"
 	Gemini3Dot7Flash = "gemini-3.7-flash"
 	DeepseekV4Flash  = "deepseek-chat-v3.1"
+)
+
+// OpenRouter server tools, the model decides when to search the web or fetch a page
+const (
+	WebToolsEnabled          = true
+	WebSearchEngine          = "exa"
+	WebSearchMaxResults      = 5
+	WebSearchMaxUses         = 3
+	WebFetchEngine           = "openrouter"
+	WebFetchMaxUses          = 3
+	WebFetchMaxContentTokens = 20000
+	// MaxSources is how many cited pages are listed under the answer
+	MaxSources = 5
 )
 
 const (

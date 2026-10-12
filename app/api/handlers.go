@@ -191,7 +191,7 @@ func (l *LlmHandler) GetCompletion(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := context.Background()
 	llmReq := NewCompletionRequestMessageSlice(&completionRequestHolder)
-	resp, err := l.llmService.GetCompletionMessage(ctx, llmReq, "", config.DefaultModel) // TODO: select model
+	resp, err := l.llmService.GetCompletionMessage(ctx, llmReq, "", config.DefaultModel, llm.CompletionOptions{}) // TODO: select model
 	if err != nil {
 		ErrorResponse(err, "failed to get completion", http.StatusUnprocessableEntity, w, r)
 		return

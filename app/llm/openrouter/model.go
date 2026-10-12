@@ -6,6 +6,30 @@ type ChatCompletionRequest struct {
 	Model     Model               `json:"model"`
 	Reasoning Reasoning           `json:"reasoning"`
 	Messages  []CompletionMessage `json:"messages"`
+	Tools     []Tool              `json:"tools,omitempty"`
+}
+
+// Tool is an OpenRouter server tool, executed by OpenRouter when the model calls it
+type Tool struct {
+	Type       string `json:"type"`
+	Parameters any    `json:"parameters,omitempty"`
+}
+
+const (
+	ToolWebSearch = "openrouter:web_search"
+	ToolWebFetch  = "openrouter:web_fetch"
+)
+
+type WebSearchParameters struct {
+	Engine     string `json:"engine,omitempty"`
+	MaxResults int    `json:"max_results,omitempty"`
+	MaxUses    int    `json:"max_uses,omitempty"`
+}
+
+type WebFetchParameters struct {
+	Engine           string `json:"engine,omitempty"`
+	MaxUses          int    `json:"max_uses,omitempty"`
+	MaxContentTokens int    `json:"max_content_tokens,omitempty"`
 }
 type Reasoning struct {
 	Effort  string `json:"effort,omitempty"`
@@ -17,8 +41,19 @@ type CompletionMessage struct {
 }
 
 type ChoiceContent struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role        string       `json:"role"`
+	Content     string       `json:"content"`
+	Annotations []Annotation `json:"annotations,omitempty"`
+}
+
+type Annotation struct {
+	Type        string       `json:"type"`
+	URLCitation *URLCitation `json:"url_citation,omitempty"`
+}
+
+type URLCitation struct {
+	URL   string `json:"url"`
+	Title string `json:"title"`
 }
 
 type CompletionContent struct {
@@ -57,7 +92,12 @@ type Choice struct {
 }
 
 type Usage struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
+	PromptTokens     int            `json:"prompt_tokens"`
+	CompletionTokens int            `json:"completion_tokens"`
+	TotalTokens      int            `json:"total_tokens"`
+	ServerToolUse    *ServerToolUse `json:"server_tool_use,omitempty"`
+}
+
+type ServerToolUse struct {
+	WebSearchRequests int `json:"web_search_requests"`
 }
