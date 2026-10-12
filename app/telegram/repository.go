@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	sqlGetMessge       = "select chat_id, message_id, reply_id, message_text, role, created_at, updated_at from message where message_id = $1 and role != 'system'"
+	sqlGetMessge       = "select chat_id, message_id, reply_id, message_text, role, created_at, updated_at from message where chat_id = $1 and message_id = $2 and role != 'system'"
 	sqlSaveMessage     = "insert into message (chat_id, message_id, reply_id, message_text, role, created_at, updated_at) values (:chat_id, :message_id, :reply_id, :message_text, :role, :created_at, :updated_at)"
 	sqlGetMessageChain = `
 	with recursive x as (
@@ -28,7 +28,8 @@ const (
 		from
 			message
 		where
-			message_id = $1
+			chat_id = $1
+			and message_id = $2
 			and role != 'system'
 		union all
 		select
@@ -43,11 +44,12 @@ const (
 		from
 			message m
 		join x on
-			m.message_id = x.reply_id
+			m.chat_id = x.chat_id
+			and m.message_id = x.reply_id
 		where
 			x.reply_id is not null
 			and x.reply_id > 0
-			and x.depth + 1 < $2
+			and x.depth + 1 < $3
 			and m.role != 'system'
 	  )
 		select
@@ -68,9 +70,9 @@ type MessageDbRepository struct {
 	encryptService *storage.EncryptionService
 }
 
-func (rep *MessageDbRepository) GetMessageById(ctx context.Context, messageId int64) (*storage.Message, error) {
+func (rep *MessageDbRepository) GetMessageById(ctx context.Context, chatId int64, messageId int64) (*storage.Message, error) {
 	var msg storage.Message
-	err := rep.db.Get(&msg, sqlGetMessge, messageId)
+	err := rep.db.GetContext(ctx, &msg, sqlGetMessge, chatId, messageId)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", storage.ErrMessageNotFound, err)
 	}
@@ -82,9 +84,9 @@ func (rep *MessageDbRepository) GetMessageById(ctx context.Context, messageId in
 	return &msg, nil
 }
 
-func (rep *MessageDbRepository) GetMessageChain(ctx context.Context, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
+func (rep *MessageDbRepository) GetMessageChain(ctx context.Context, chatId int64, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
 	messageChain := make([]*storage.Message, 0)
-	err := rep.db.SelectContext(ctx, &messageChain, sqlGetMessageChain, topMessageId, maxConversationDepth)
+	err := rep.db.SelectContext(ctx, &messageChain, sqlGetMessageChain, chatId, topMessageId, maxConversationDepth)
 	if err != nil {
 		return messageChain, err
 	}

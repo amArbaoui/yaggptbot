@@ -20,8 +20,8 @@ func NewMessageDbService(db *sqlx.DB, encryptService *storage.EncryptionService)
 	return &MessageDbService{rep: &repository}
 }
 
-func (ms *MessageDbService) GetMessage(ctx context.Context, messageId int64) (*Message, error) {
-	msg, err := ms.rep.GetMessageById(ctx, messageId)
+func (ms *MessageDbService) GetMessage(ctx context.Context, chatId int64, messageId int64) (*Message, error) {
+	msg, err := ms.rep.GetMessageById(ctx, chatId, messageId)
 	if err != nil {
 		return nil, err
 	}
@@ -29,8 +29,8 @@ func (ms *MessageDbService) GetMessage(ctx context.Context, messageId int64) (*M
 	return &Message{Id: msg.TgMsgId, Text: msg.Text, RepyToId: msg.RepyToTgMsgId, ChatId: msg.ChatId, Role: msg.Role}, nil
 }
 
-func (ms *MessageDbService) GetMessageChain(ctx context.Context, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
-	msgChain, err := ms.rep.GetMessageChain(ctx, topMessageId, maxConversationDepth)
+func (ms *MessageDbService) GetMessageChain(ctx context.Context, chatId int64, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error) {
+	msgChain, err := ms.rep.GetMessageChain(ctx, chatId, topMessageId, maxConversationDepth)
 	if err != nil {
 		return nil, err
 	}
