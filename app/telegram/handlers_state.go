@@ -1,10 +1,11 @@
 package telegram
 
 import (
+	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/user"
 	"context"
-	"fmt"
 	"log"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -24,12 +25,11 @@ func SetPromptHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 		log.Printf("failed to get user %v", err)
 		return
 	}
-	if messageText == "" {
-		respText = "Please send valid prompt text"
-
+	if strings.TrimSpace(messageText) == "" {
+		bot.TextReplyWithContext(ctx, config.InvalidPromptMessage, m)
+		return
 	}
-	newPrompt := fmt.Sprintf("%s. USER_PROMPT: %s", bot.config.DefaultPrompt, messageText)
-	prompt := user.UserPrompt{UserID: u.Id, Prompt: newPrompt}
+	prompt := user.UserPrompt{UserID: u.Id, Prompt: messageText}
 	err = bot.userService.SetUserPrompt(ctx, &prompt)
 	if err != nil {
 		respText = "Error, failed to set new prompt. Please try again"

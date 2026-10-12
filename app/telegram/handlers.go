@@ -23,7 +23,6 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 	default:
 	}
 
-	var promptText string
 	m := update.Message
 	llmCompetionRequest, err := bot.GetConversationChain(ctx, m)
 	if err != nil {
@@ -40,25 +39,19 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 		log.Println(err)
 	}
 
-	prompt, err := bot.userService.GetUserPromptByTgId(ctx, update.SentFrom().ID)
-	switch err {
-	case nil:
-		promptText = prompt.Prompt
-	case user.ErrPromptNotFound:
-		promptText = bot.config.DefaultPrompt
-	default:
-		promptText = bot.config.DefaultPrompt
-		log.Println(err)
-	}
+	promptText := bot.systemPrompt(ctx, update.SentFrom().ID)
 
 	model, err := bot.userService.GetUserModelByTgId(ctx, update.SentFrom().ID)
 	if err != nil {
 		log.Println(err)
+		model = &user.UserModel{Model: config.DefaultModel}
 	}
+	stopTyping := bot.keepTyping(ctx, m.Chat.ID)
 	llmResp, err := bot.llmService.GetCompletionMessage(ctx, llmCompetionRequest, promptText, model.Model)
+	stopTyping()
 	if err != nil {
-		log.Println(err)
-
+		bot.replyLlmError(ctx, m, model.Model, err)
+		return
 	}
 
 	aiResp := MessageOut{Text: llmResp, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
@@ -103,8 +96,10 @@ func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 	}
 	imageUrl, err := bot.botAPI.GetFileDirectURL(m.Photo[len(m.Photo)-1].FileID)
 	if err != nil {
+		log.Printf("failed to get photo url, %s", err)
 		text = "Failed to handle photo, please try again"
 		bot.TextReplyWithContext(ctx, text, m)
+		return
 	}
 	if m.Caption != "" {
 		caption = m.Caption
@@ -122,9 +117,12 @@ func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 		ImageUrl: &imageUrl,
 	},
 	)
+	stopTyping := bot.keepTyping(ctx, m.Chat.ID)
 	llmResp, err := bot.llmService.GetCompletionMessage(ctx, conversationChain, bot.config.DefaultPrompt, config.Gpt5Dot6Luna)
+	stopTyping()
 	if err != nil {
-		log.Println(err)
+		bot.replyLlmError(ctx, m, config.Gpt5Dot6Luna, err)
+		return
 	}
 	msg, err := bot.TextReplyWithContext(ctx, llmResp, m)
 	if err != nil {
@@ -164,6 +162,7 @@ func handleUserCallback(ctx context.Context, update *tgbotapi.Update, bot *GPTBo
 	userName := split[2]
 	userId, _ := strconv.Atoi(split[3])
 	if operation == "register" {
+		bot.pendingRegistrations.Delete(int64(userId))
 		err := bot.userService.SaveUser(
 			ctx,
 			&user.User{
@@ -212,26 +211,48 @@ func handleModelSelectionCallback(ctx context.Context, update *tgbotapi.Update, 
 	default:
 	}
 
-	var reply string
-	data := update.CallbackData()
-	split := strings.Split(data, ":")
-	operation := split[1]
-	modelName := split[2]
-	userId, _ := strconv.Atoi(split[3])
-	userEntity, err := bot.userService.GetUserByTgId(ctx, int64(userId))
-	if err != nil {
-		reply = "error, failed to set model"
-		bot.botAPI.Send(tgbotapi.NewMessage(int64(userId), reply))
+	query := update.CallbackQuery
+	split := strings.Split(query.Data, ":")
+	if len(split) < 3 || split[1] != "set" {
 		return
 	}
-	if operation == "set" {
-		err := bot.userService.SetUserModel(ctx, &user.UserModel{UserID: userEntity.Id, Model: modelName})
-		if err != nil {
-			reply = "error, failed to set model"
+	modelName := split[2]
+	answer := tgbotapi.NewCallback(query.ID, "")
+	defer func() {
+		if _, err := bot.botAPI.Request(answer); err != nil {
+			log.Printf("failed to answer callback, %v", err)
 		}
-		reply = fmt.Sprintf("you're now using %s", modelName)
-		bot.botAPI.Send(tgbotapi.NewMessage(int64(userId), reply))
+	}()
 
+	userEntity, err := bot.userService.GetUserByTgId(ctx, query.From.ID)
+	if err != nil {
+		log.Printf("failed to get user %d, %v", query.From.ID, err)
+		answer.Text = config.SetModelFailedMessage
+		return
+	}
+	if _, ok := config.ModelMap[modelName]; !ok {
+		log.Printf("unknown model %s selected by user %d", modelName, query.From.ID)
+		answer.Text = config.SetModelFailedMessage
+		return
+	}
+	err = bot.userService.SetUserModel(ctx, &user.UserModel{UserID: userEntity.Id, Model: modelName})
+	if err != nil {
+		log.Printf("failed to set model for user %d, %v", query.From.ID, err)
+		answer.Text = config.SetModelFailedMessage
+		return
+	}
+	answer.Text = fmt.Sprintf("You're now using %s", modelName)
+	if query.Message == nil {
+		return
+	}
+	edit := tgbotapi.NewEditMessageTextAndMarkup(
+		query.Message.Chat.ID,
+		query.Message.MessageID,
+		fmt.Sprintf(config.SelectModelMessage, modelName),
+		NewModelKeyboard(query.Message.Chat.ID, modelName),
+	)
+	if _, err := bot.botAPI.Request(edit); err != nil {
+		log.Printf("failed to update model keyboard, %v", err)
 	}
 }
 

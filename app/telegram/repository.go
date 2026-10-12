@@ -130,6 +130,9 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 func (rep *MessageDbRepository) SaveMessages(ctx context.Context, messages []*tgbotapi.Message, role string) error {
 	var buffer bytes.Buffer
 
+	if len(messages) == 0 {
+		return nil
+	}
 	for _, m := range messages {
 		buffer.WriteString(m.Text)
 	}

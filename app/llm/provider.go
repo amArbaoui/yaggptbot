@@ -7,6 +7,7 @@ import (
 
 var ErrProviderNotFound = errors.New("unknown provider")
 var ErrModelNotFound = errors.New("unknown model")
+var ErrEmptyCompletion = errors.New("empty completion")
 
 type ChatProvider interface {
 	GetCompletionMessage(ctx context.Context, messages []CompletionRequestMessage, userPromt string, model string) (string, error)

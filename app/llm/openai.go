@@ -3,6 +3,7 @@ package llm
 import (
 	"amArbaoui/yaggptbot/app/config"
 	"context"
+	"fmt"
 
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -23,13 +24,13 @@ func (o *OpenAiProvider) GetCompletionMessage(ctx context.Context, messages []Co
 	if !ok {
 		return "", ErrModelNotFound
 	}
-	systemPromt := openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleUser,
-		Content: userPromt,
+	completionMessages := make([]openai.ChatCompletionMessage, 0, len(messages)+1)
+	if userPromt != "" {
+		completionMessages = append(completionMessages, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: userPromt,
+		})
 	}
-
-	completionMessages := make([]openai.ChatCompletionMessage, 0)
-	completionMessages = append(completionMessages, systemPromt)
 	for _, message := range messages {
 		content := make([]openai.ChatMessagePart, 0)
 		if message.ImageUrl == nil {
@@ -53,6 +54,9 @@ func (o *OpenAiProvider) GetCompletionMessage(ctx context.Context, messages []Co
 	resp, err := o.Client.CreateChatCompletion(ctx, req)
 	if err != nil {
 		return "", err
+	}
+	if len(resp.Choices) == 0 || resp.Choices[0].Message.Content == "" {
+		return "", fmt.Errorf("%w: model %s", ErrEmptyCompletion, model)
 	}
 	return resp.Choices[0].Message.Content, nil
 

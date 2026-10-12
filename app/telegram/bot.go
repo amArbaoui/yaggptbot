@@ -2,10 +2,14 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/config"
+	"amArbaoui/yaggptbot/app/user"
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -26,6 +30,8 @@ type GPTBot struct {
 	botOptions     BotOptions
 	userDispatcher *Dispatcher
 	config         config.Config
+	// tg ids of users waiting for the admin approval, to avoid duplicate requests
+	pendingRegistrations *sync.Map
 }
 
 func NewGPTBot(botApi *tgbotapi.BotAPI,
@@ -36,17 +42,21 @@ func NewGPTBot(botApi *tgbotapi.BotAPI,
 	botOptions BotOptions,
 	config *config.Config) GPTBot {
 	return GPTBot{botAPI: botApi,
-		chatService:    chatService,
-		llmService:     llmservice,
-		msgService:     messageService,
-		userService:    userService,
-		botOptions:     botOptions,
-		userDispatcher: GetUserDispatcher(),
-		config:         *config}
+		chatService:          chatService,
+		llmService:           llmservice,
+		msgService:           messageService,
+		userService:          userService,
+		botOptions:           botOptions,
+		userDispatcher:       GetUserDispatcher(),
+		config:               *config,
+		pendingRegistrations: &sync.Map{}}
 }
 
 func (b *GPTBot) StartPolling(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
+	if _, err := b.botAPI.Request(tgbotapi.NewSetMyCommands(botCommands...)); err != nil {
+		log.Printf("failed to set bot commands, %v", err)
+	}
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates := b.botAPI.GetUpdatesChan(u)
@@ -100,4 +110,45 @@ func (b *GPTBot) TextReplyWithContext(ctx context.Context, replyText string, m *
 		log.Println(err)
 	}
 	return msg, err
+}
+
+func (b *GPTBot) replyLlmError(ctx context.Context, m *tgbotapi.Message, model string, err error) {
+	log.Printf("failed to get completion from %s for user %d: %v", model, m.From.ID, err)
+	if ctx.Err() != nil {
+		return
+	}
+	b.TextReplyWithContext(ctx, fmt.Sprintf(config.LlmErrorMessage, model), m)
+}
+
+// keepTyping shows the "typing…" chat action until the returned stop func is called.
+// Telegram clears the action after ~5 seconds, so it is resent periodically.
+func (b *GPTBot) keepTyping(ctx context.Context, chatId int64) (stop func()) {
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		ticker := time.NewTicker(config.TypingActionInterval)
+		defer ticker.Stop()
+		for {
+			if _, err := b.botAPI.Request(tgbotapi.NewChatAction(chatId, tgbotapi.ChatTyping)); err != nil {
+				log.Printf("failed to send typing action, %v", err)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+	return cancel
+}
+
+// systemPrompt returns the default prompt extended with the user's custom prompt, if any
+func (b *GPTBot) systemPrompt(ctx context.Context, tgId int64) string {
+	prompt, err := b.userService.GetUserPromptByTgId(ctx, tgId)
+	if err != nil {
+		if !errors.Is(err, user.ErrPromptNotFound) {
+			log.Println(err)
+		}
+		return b.config.DefaultPrompt
+	}
+	return fmt.Sprintf("%s\nUSER_PROMPT: %s", b.config.DefaultPrompt, prompt.Prompt)
 }
