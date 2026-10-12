@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/user"
 	"context"
 	"log"
@@ -13,16 +14,26 @@ type StateHandler func(ctx context.Context, bot *GPTBot, update *tgbotapi.Update
 type Command func(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 
 type Dispatcher struct {
-	baseHandlers map[string]BaseHandler
-	stateHandler map[user.State]StateHandler
-	commands     map[string]Command
+	baseHandlers   map[string]BaseHandler
+	stateHandler   map[user.State]StateHandler
+	commands       map[string]Command
+	publicCommands map[string]bool
+}
+
+// botCommands are shown in the telegram commands menu
+var botCommands = []tgbotapi.BotCommand{
+	{Command: "setmodel", Description: "Choose the model"},
+	{Command: "promptset", Description: "Set a custom prompt"},
+	{Command: "promptreset", Description: "Remove the custom prompt"},
+	{Command: "help", Description: "How to use the bot"},
 }
 
 func NewDispatcher() *Dispatcher {
 	return &Dispatcher{
-		baseHandlers: make(map[string]BaseHandler),
-		stateHandler: make(map[user.State]StateHandler),
-		commands:     make(map[string]Command),
+		baseHandlers:   make(map[string]BaseHandler),
+		stateHandler:   make(map[user.State]StateHandler),
+		commands:       make(map[string]Command),
+		publicCommands: make(map[string]bool),
 	}
 }
 
@@ -33,7 +44,8 @@ func GetUserDispatcher() *Dispatcher {
 	userDispatcher.RegisterBaseHandler("photo", UserPhotoHandler)
 	userDispatcher.RegisterBaseHandler("message", UserMesasgeHandler)
 	userDispatcher.RegisterStateHandler(user.SETTING_PROMT, SetPromptHandler)
-	userDispatcher.RegisterCommand("start", StartCommand)
+	userDispatcher.RegisterPublicCommand("start", StartCommand)
+	userDispatcher.RegisterPublicCommand("help", HelpCommand)
 	userDispatcher.RegisterCommand("promptset", SetPromptCommand)
 	userDispatcher.RegisterCommand("promptreset", ResetPromtCommand)
 	userDispatcher.RegisterCommand("setmodel", SetModelCommand)
@@ -54,6 +66,12 @@ func (d *Dispatcher) RegisterCommand(path string, command Command) {
 	d.commands[path] = command
 }
 
+// RegisterPublicCommand registers a command available to not registered users
+func (d *Dispatcher) RegisterPublicCommand(path string, command Command) {
+	d.RegisterCommand(path, command)
+	d.publicCommands[path] = true
+}
+
 func (d *Dispatcher) HandleUpdate(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 	select {
 	case <-ctx.Done():
@@ -70,6 +88,10 @@ func (d *Dispatcher) HandleUpdate(ctx context.Context, bot *GPTBot, update *tgbo
 		cmd, ok := d.commands[commandText]
 		if !ok {
 			log.Printf("received unknown command, %s", commandText)
+			bot.TextReplyWithContext(ctx, config.UnknownCommandMessage, update.Message)
+			return
+		}
+		if !d.publicCommands[commandText] && bot.ValidateUpdate(update) != nil {
 			return
 		}
 		cmd(ctx, bot, update)

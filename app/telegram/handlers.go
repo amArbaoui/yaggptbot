@@ -172,6 +172,7 @@ func handleUserCallback(ctx context.Context, update *tgbotapi.Update, bot *GPTBo
 	userName := split[2]
 	userId, _ := strconv.Atoi(split[3])
 	if operation == "register" {
+		bot.pendingRegistrations.Delete(int64(userId))
 		err := bot.userService.SaveUser(
 			ctx,
 			&user.User{

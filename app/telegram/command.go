@@ -1,8 +1,10 @@
 package telegram
 
 import (
+	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/user"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -10,22 +12,34 @@ import (
 )
 
 func StartCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
-	fromId := update.Message.From.ID
-	tgName := update.Message.From.UserName
+	m := update.Message
+	fromId := m.From.ID
+	tgName := m.From.UserName
 	err := bot.userService.ValidateTgUser(ctx, update.SentFrom())
-	if err == nil {
+	switch {
+	case err == nil:
+		HelpCommand(ctx, bot, update)
+		return
+	case errors.Is(err, user.ErrBotsNotAllowed):
 		return
 	}
-	if update.Message.From.ID == bot.botOptions.BotAdminChatId {
+	if fromId == bot.botOptions.BotAdminChatId {
 		err = bot.userService.SaveUser(ctx, &user.User{
 			Id:     fromId,
 			TgName: tgName,
 			ChatId: fromId,
 		})
 		if err != nil {
+			log.Printf("failed to register admin user %s, %v", tgName, err)
 			return
 		}
 		log.Printf("registered admin user %s", tgName)
+		HelpCommand(ctx, bot, update)
+		return
+	}
+	if _, pending := bot.pendingRegistrations.LoadOrStore(fromId, struct{}{}); pending {
+		bot.TextReplyWithContext(ctx, config.RegistrationPendingMessage, m)
+		return
 	}
 	msg := tgbotapi.NewMessage(bot.botOptions.NotificationChatId, fmt.Sprintf("🧐 Register %s?", tgName))
 	msg.ReplyMarkup = NewRegistrationKeyboard(
@@ -35,7 +49,15 @@ func StartCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 	_, err = bot.botAPI.Send(msg)
 	if err != nil {
 		log.Println(err)
+		bot.pendingRegistrations.Delete(fromId)
+		bot.TextReplyWithContext(ctx, config.RegistrationFailedMessage, m)
+		return
 	}
+	bot.TextReplyWithContext(ctx, config.RegistrationRequestedMessage, m)
+}
+
+func HelpCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
+	bot.TextReplyWithContext(ctx, tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.HowToUseItMessage), update.Message)
 }
 
 func SetPromptCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {

@@ -28,6 +28,8 @@ type GPTBot struct {
 	botOptions     BotOptions
 	userDispatcher *Dispatcher
 	config         config.Config
+	// tg ids of users waiting for the admin approval, to avoid duplicate requests
+	pendingRegistrations *sync.Map
 }
 
 func NewGPTBot(botApi *tgbotapi.BotAPI,
@@ -38,17 +40,21 @@ func NewGPTBot(botApi *tgbotapi.BotAPI,
 	botOptions BotOptions,
 	config *config.Config) GPTBot {
 	return GPTBot{botAPI: botApi,
-		chatService:    chatService,
-		llmService:     llmservice,
-		msgService:     messageService,
-		userService:    userService,
-		botOptions:     botOptions,
-		userDispatcher: GetUserDispatcher(),
-		config:         *config}
+		chatService:          chatService,
+		llmService:           llmservice,
+		msgService:           messageService,
+		userService:          userService,
+		botOptions:           botOptions,
+		userDispatcher:       GetUserDispatcher(),
+		config:               *config,
+		pendingRegistrations: &sync.Map{}}
 }
 
 func (b *GPTBot) StartPolling(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
+	if _, err := b.botAPI.Request(tgbotapi.NewSetMyCommands(botCommands...)); err != nil {
+		log.Printf("failed to set bot commands, %v", err)
+	}
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates := b.botAPI.GetUpdatesChan(u)

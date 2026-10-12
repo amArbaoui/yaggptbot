@@ -6,20 +6,30 @@ const LlmErrorMessage = `⚠️ Failed to get a response from %s. Please try aga
 
 const GreetUserMessage = `👋 Hello and welcome! The adminstrator has approved your request to use this bot`
 const HowToUseItMessage = `🚀 Let's get started!
-1. Start a Conversation
-   - Simply send a message to the bot to begin interaction.
+1. Start a conversation
+   - Just send a message and the bot will answer.
 
-2. Responding to Messages:
-   - The bot will use the message's context to provide a relevant response, so use reply function.
+2. Keep the context
+   - Reply to the bot's message to continue the conversation. A message without a reply starts a new one.
 
-3. Setting a Custom Prompt:
-   - Use the command /promtset <your_prompt> to set a specific prompt that the bot should consider in its replies.
+3. Images
+   - Send a photo, optionally with a caption, to ask about it.
 
-4. Resetting the Prompt:
-   - Use the command /promtreset to remove any previously set prompt and return to default settings.
+4. Commands
+   - /setmodel - choose the model
+   - /promptset - set a custom prompt, the bot will ask for its text
+   - /promptreset - remove your custom prompt
+   - /help - show this message
 
 Happy chatting!
 `
+
+const (
+	UnknownCommandMessage        = "Unknown command. Use /help to see available commands"
+	RegistrationRequestedMessage = "Your request has been sent to the admin. You will get a message once it is approved"
+	RegistrationPendingMessage   = "Your request is already waiting for the admin's approval"
+	RegistrationFailedMessage    = "Failed to send your request to the admin, please try again later"
+)
 
 const (
 	OpenAI                 = "openai"
