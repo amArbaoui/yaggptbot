@@ -4,6 +4,7 @@ import (
 	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/llm/openrouter"
 	"context"
+	"fmt"
 )
 
 type OpenRouterProvider struct {
@@ -70,6 +71,9 @@ func (o *OpenRouterProvider) GetCompletionMessage(ctx context.Context, messages 
 	completion, err := o.client.GetChatCompletion(ctx, req)
 	if err != nil {
 		return "", err
+	}
+	if len(completion.Choices) == 0 || completion.Choices[0].Message.Content == "" {
+		return "", fmt.Errorf("%w: model %s", ErrEmptyCompletion, model)
 	}
 	return completion.Choices[0].Message.Content, nil
 }

@@ -3,6 +3,7 @@ package llm
 import (
 	"amArbaoui/yaggptbot/app/config"
 	"context"
+	"fmt"
 
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -53,6 +54,9 @@ func (o *OpenAiProvider) GetCompletionMessage(ctx context.Context, messages []Co
 	resp, err := o.Client.CreateChatCompletion(ctx, req)
 	if err != nil {
 		return "", err
+	}
+	if len(resp.Choices) == 0 || resp.Choices[0].Message.Content == "" {
+		return "", fmt.Errorf("%w: model %s", ErrEmptyCompletion, model)
 	}
 	return resp.Choices[0].Message.Content, nil
 

@@ -3,6 +3,7 @@ package telegram
 import (
 	"amArbaoui/yaggptbot/app/config"
 	"context"
+	"fmt"
 	"log"
 	"runtime/debug"
 	"sync"
@@ -100,4 +101,12 @@ func (b *GPTBot) TextReplyWithContext(ctx context.Context, replyText string, m *
 		log.Println(err)
 	}
 	return msg, err
+}
+
+func (b *GPTBot) replyLlmError(ctx context.Context, m *tgbotapi.Message, model string, err error) {
+	log.Printf("failed to get completion from %s for user %d: %v", model, m.From.ID, err)
+	if ctx.Err() != nil {
+		return
+	}
+	b.TextReplyWithContext(ctx, fmt.Sprintf(config.LlmErrorMessage, model), m)
 }

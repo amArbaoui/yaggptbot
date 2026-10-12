@@ -1,5 +1,7 @@
 package config
 
+const LlmErrorMessage = `⚠️ Failed to get a response from %s. Please try again or switch model with /setmodel`
+
 const GreetUserMessage = `👋 Hello and welcome! The adminstrator has approved your request to use this bot`
 const HowToUseItMessage = `🚀 Let's get started!
 1. Start a Conversation

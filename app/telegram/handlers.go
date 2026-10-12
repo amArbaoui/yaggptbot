@@ -54,11 +54,12 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 	model, err := bot.userService.GetUserModelByTgId(ctx, update.SentFrom().ID)
 	if err != nil {
 		log.Println(err)
+		model = &user.UserModel{Model: config.DefaultModel}
 	}
 	llmResp, err := bot.llmService.GetCompletionMessage(ctx, llmCompetionRequest, promptText, model.Model)
 	if err != nil {
-		log.Println(err)
-
+		bot.replyLlmError(ctx, m, model.Model, err)
+		return
 	}
 
 	aiResp := MessageOut{Text: llmResp, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
@@ -103,8 +104,10 @@ func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 	}
 	imageUrl, err := bot.botAPI.GetFileDirectURL(m.Photo[len(m.Photo)-1].FileID)
 	if err != nil {
+		log.Printf("failed to get photo url, %s", err)
 		text = "Failed to handle photo, please try again"
 		bot.TextReplyWithContext(ctx, text, m)
+		return
 	}
 	if m.Caption != "" {
 		caption = m.Caption
@@ -124,7 +127,8 @@ func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 	)
 	llmResp, err := bot.llmService.GetCompletionMessage(ctx, conversationChain, bot.config.DefaultPrompt, config.Gpt5Dot6Luna)
 	if err != nil {
-		log.Println(err)
+		bot.replyLlmError(ctx, m, config.Gpt5Dot6Luna, err)
+		return
 	}
 	msg, err := bot.TextReplyWithContext(ctx, llmResp, m)
 	if err != nil {

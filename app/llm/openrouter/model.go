@@ -32,14 +32,20 @@ type ImageURL struct {
 }
 
 type ChatCompletionResponse struct {
-	ID                *string  `json:"id"`
-	Provider          string   `json:"provider"`
-	Model             string   `json:"model"`
-	Object            string   `json:"object"`
-	Created           int64    `json:"created"`
-	Choices           []Choice `json:"choices"`
-	SystemFingerprint string   `json:"system_fingerprint"`
-	Usage             Usage    `json:"usage"`
+	ID                *string   `json:"id"`
+	Provider          string    `json:"provider"`
+	Model             string    `json:"model"`
+	Object            string    `json:"object"`
+	Created           int64     `json:"created"`
+	Choices           []Choice  `json:"choices"`
+	SystemFingerprint string    `json:"system_fingerprint"`
+	Usage             Usage     `json:"usage"`
+	Error             *ApiError `json:"error,omitempty"`
+}
+
+type ApiError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 type Choice struct {
