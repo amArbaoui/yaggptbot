@@ -5,6 +5,7 @@ import (
 	"amArbaoui/yaggptbot/app/storage"
 	"amArbaoui/yaggptbot/app/user"
 	"context"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -18,6 +19,8 @@ type MessageService interface {
 	GetMessageChain(ctx context.Context, chatId int64, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
 	SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error
 	SaveMessages(ctx context.Context, messages []*tgbotapi.Message, text string, role string) error
+	GetLastAssistantMessageId(ctx context.Context, chatId int64, after time.Time) (int64, error)
+	ResetConversation(ctx context.Context, chatId int64, messageId int64) error
 }
 
 type ChatService interface {
@@ -48,4 +51,6 @@ type MessageRepository interface {
 	GetMessageChain(ctx context.Context, chatId int64, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
 	SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error
 	SaveMessages(ctx context.Context, messages []*tgbotapi.Message, text string, role string) error
+	GetLastAssistantMessageId(ctx context.Context, chatId int64, after time.Time) (int64, error)
+	ResetConversation(ctx context.Context, chatId int64, messageId int64) error
 }

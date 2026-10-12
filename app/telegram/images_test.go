@@ -109,3 +109,38 @@ func TestImageFileID(t *testing.T) {
 		}
 	}
 }
+
+func TestConversationChainAttachesOnlyLatestImages(t *testing.T) {
+	bot := newTestBotWithFile(t, pngHeader)
+	rep := newTestMessageRepository(t)
+	bot.msgService = &MessageDbService{rep: rep}
+	bot.botOptions = BotOptions{MaxConversationDepth: config.MaxMessageContextDepth}
+	photos := []tgbotapi.PhotoSize{{FileID: "f"}}
+	total := config.MaxContextImages + 2
+	for i := 1; i <= total; i++ {
+		m := &tgbotapi.Message{MessageID: i, Chat: &tgbotapi.Chat{ID: 1}, Photo: photos}
+		if i > 1 {
+			m.ReplyToMessage = &tgbotapi.Message{MessageID: i - 1}
+		}
+		if err := rep.SaveMessage(context.Background(), m, "user"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	next := &tgbotapi.Message{MessageID: total + 1, Chat: &tgbotapi.Chat{ID: 1}, ReplyToMessage: &tgbotapi.Message{MessageID: total}}
+	chain, err := bot.GetConversationChain(context.Background(), next)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(chain) != total {
+		t.Fatalf("expected %d messages, got %d", total, len(chain))
+	}
+	for i, m := range chain {
+		attached := i >= total-config.MaxContextImages
+		if attached != (m.ImageUrl != nil) {
+			t.Errorf("message %d: expected image attached=%v", i, attached)
+		}
+		if !attached && m.Text != "[image]" {
+			t.Errorf("message %d: expected placeholder text, got %q", i, m.Text)
+		}
+	}
+}

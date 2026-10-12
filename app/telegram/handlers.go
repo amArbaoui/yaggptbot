@@ -23,7 +23,7 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 	default:
 	}
 
-	m := update.Message
+	m := bot.withImplicitReply(ctx, update.Message)
 	conversation, err := bot.GetConversationChain(ctx, m)
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotFound) {
@@ -79,6 +79,7 @@ func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 		bot.TextReplyWithContext(ctx, replyText, m)
 		return
 	}
+	m = bot.withImplicitReply(ctx, m)
 	conversation, err := bot.GetConversationChain(ctx, m)
 	if err != nil {
 		log.Println(err)
@@ -232,9 +233,18 @@ func (b *GPTBot) GetConversationChain(ctx context.Context, m *tgbotapi.Message) 
 	if err != nil {
 		return completionRequest, err
 	}
+	attachImages := make(map[int64]bool)
+	for i := len(messageChain) - 1; i >= 0 && len(attachImages) < config.MaxContextImages; i-- {
+		if messageChain[i].ImageFileId != nil {
+			attachImages[messageChain[i].TgMsgId] = true
+		}
+	}
 	for _, message := range messageChain {
 		request := llm.CompletionRequestMessage{Text: message.Text, Role: message.Role}
-		if message.ImageFileId != nil {
+		if message.ImageFileId != nil && !attachImages[message.TgMsgId] && request.Text == "" {
+			request.Text = "[image]"
+		}
+		if attachImages[message.TgMsgId] {
 			imageURL, err := b.imageDataURL(ctx, *message.ImageFileId)
 			if err != nil {
 				log.Printf("failed to get image of message %d: %v", message.TgMsgId, err)

@@ -6,6 +6,7 @@ import (
 	"amArbaoui/yaggptbot/app/tgformat"
 	"context"
 	"log"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jmoiron/sqlx"
@@ -36,6 +37,14 @@ func (ms *MessageDbService) GetMessageChain(ctx context.Context, chatId int64, t
 	}
 
 	return msgChain, nil
+}
+
+func (ms *MessageDbService) GetLastAssistantMessageId(ctx context.Context, chatId int64, after time.Time) (int64, error) {
+	return ms.rep.GetLastAssistantMessageId(ctx, chatId, after)
+}
+
+func (ms *MessageDbService) ResetConversation(ctx context.Context, chatId int64, messageId int64) error {
+	return ms.rep.ResetConversation(ctx, chatId, messageId)
 }
 
 func (ms *MessageDbService) SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error {

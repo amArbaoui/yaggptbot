@@ -1,10 +1,12 @@
 package telegram
 
 import (
+	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/storage"
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/golang-migrate/migrate/v4"
@@ -156,5 +158,66 @@ func TestPhotoMessageIsStoredWithCaptionAndImage(t *testing.T) {
 	}
 	if chain[0].Text != "what is it?" || chain[0].ImageFileId == nil || *chain[0].ImageFileId != "large" {
 		t.Errorf("expected caption and largest photo, got %q, %v", chain[0].Text, chain[0].ImageFileId)
+	}
+}
+
+func TestImplicitReplyContinuesLatestConversation(t *testing.T) {
+	rep := newTestMessageRepository(t)
+	bot := &GPTBot{msgService: &MessageDbService{rep: rep}, botOptions: BotOptions{MaxConversationDepth: config.MaxMessageContextDepth}}
+	ctx := context.Background()
+	const chatId = 1
+	newMessage := func(id int) *tgbotapi.Message {
+		return &tgbotapi.Message{MessageID: id, Chat: &tgbotapi.Chat{ID: chatId}, Text: "next"}
+	}
+
+	if got := bot.withImplicitReply(ctx, newMessage(1)); got.ReplyToMessage != nil {
+		t.Errorf("first message in the chat should start a conversation")
+	}
+
+	saveTestMessage(t, rep, chatId, 1, 0, "question", "user")
+	saveTestMessage(t, rep, chatId, 2, 1, "answer", "assistant")
+	saveTestMessage(t, rep, chatId, 3, 2, "follow-up", "user")
+	saveTestMessage(t, rep, chatId, 4, 3, "second answer", "assistant")
+	saveTestMessage(t, rep, 2, 10, 0, "other chat answer", "assistant")
+
+	got := bot.withImplicitReply(ctx, newMessage(5))
+	if got.ReplyToMessage == nil || got.ReplyToMessage.MessageID != 4 {
+		t.Fatalf("expected implicit reply to the latest answer 4, got %+v", got.ReplyToMessage)
+	}
+	chain, err := bot.GetConversationChain(ctx, got)
+	if err != nil || len(chain) != 4 {
+		t.Errorf("expected the whole conversation in the chain, got %d messages, %v", len(chain), err)
+	}
+
+	explicit := newMessage(6)
+	explicit.ReplyToMessage = &tgbotapi.Message{MessageID: 2}
+	if got := bot.withImplicitReply(ctx, explicit); got.ReplyToMessage.MessageID != 2 {
+		t.Errorf("explicit reply should be kept, got %d", got.ReplyToMessage.MessageID)
+	}
+
+	if err := rep.ResetConversation(ctx, chatId, 7); err != nil {
+		t.Fatal(err)
+	}
+	if got := bot.withImplicitReply(ctx, newMessage(8)); got.ReplyToMessage != nil {
+		t.Errorf("message after /new should start a conversation, got reply to %d", got.ReplyToMessage.MessageID)
+	}
+	saveTestMessage(t, rep, chatId, 9, 8, "answer after reset", "assistant")
+	if got := bot.withImplicitReply(ctx, newMessage(10)); got.ReplyToMessage == nil || got.ReplyToMessage.MessageID != 9 {
+		t.Errorf("expected to continue the conversation started after /new")
+	}
+}
+
+func TestImplicitReplyExpiresAfterTimeout(t *testing.T) {
+	rep := newTestMessageRepository(t)
+	bot := &GPTBot{msgService: &MessageDbService{rep: rep}, botOptions: BotOptions{MaxConversationDepth: config.MaxMessageContextDepth}}
+	saveTestMessage(t, rep, 1, 1, 0, "question", "user")
+	saveTestMessage(t, rep, 1, 2, 1, "answer", "assistant")
+	expired := time.Now().Add(-config.ConversationTimeout - time.Minute).Unix()
+	if _, err := rep.db.Exec("update message set created_at = $1", expired); err != nil {
+		t.Fatal(err)
+	}
+	msg := &tgbotapi.Message{MessageID: 3, Chat: &tgbotapi.Chat{ID: 1}, Text: "next"}
+	if got := bot.withImplicitReply(context.Background(), msg); got.ReplyToMessage != nil {
+		t.Errorf("expired conversation should not be continued")
 	}
 }

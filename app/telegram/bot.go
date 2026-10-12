@@ -186,3 +186,22 @@ func (b *GPTBot) userModel(ctx context.Context, tgId int64) string {
 	}
 	return model.Model
 }
+
+// withImplicitReply makes a message without a reply continue the latest conversation in the chat:
+// the one the bot answered within config.ConversationTimeout, unless it was reset with /new.
+func (b *GPTBot) withImplicitReply(ctx context.Context, m *tgbotapi.Message) *tgbotapi.Message {
+	if m.ReplyToMessage != nil {
+		return m
+	}
+	lastMessageId, err := b.msgService.GetLastAssistantMessageId(ctx, m.Chat.ID, time.Now().Add(-config.ConversationTimeout))
+	if err != nil {
+		log.Printf("failed to get last message in chat %d, %v", m.Chat.ID, err)
+		return m
+	}
+	if lastMessageId == 0 {
+		return m
+	}
+	msg := *m
+	msg.ReplyToMessage = &tgbotapi.Message{MessageID: int(lastMessageId), Chat: m.Chat}
+	return &msg
+}
