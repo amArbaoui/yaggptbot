@@ -89,14 +89,20 @@ func (rep *MessageDbRepository) GetMessageChain(ctx context.Context, chatId int6
 	if err != nil {
 		return messageChain, err
 	}
+	result := make([]*storage.Message, 0, len(messageChain))
 	for _, m := range messageChain {
 		decoded, err := storage.DecodeStoredText(m.Text, *rep.encryptService)
 		if err != nil {
 			return messageChain, err
 		}
+		// continuation chunks of a split reply have no text of their own
+		if decoded == "" {
+			continue
+		}
 		m.Text = decoded
+		result = append(result, m)
 	}
-	return messageChain, nil
+	return result, nil
 }
 
 func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error {
@@ -126,13 +132,22 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 	return nil
 }
 
-// SaveMessages saves a reply sent as several telegram messages under the first message id.
-// text is the original reply text: telegram returns sent messages without markup.
+// SaveMessages saves a reply sent as several telegram messages.
+// The first message holds the whole text: telegram returns sent messages without markup.
+// The following ones are saved without text, as replies to the previous chunk,
+// so replying to any chunk resolves to the same conversation.
 func (rep *MessageDbRepository) SaveMessages(ctx context.Context, messages []*tgbotapi.Message, text string, role string) error {
-	if len(messages) == 0 {
-		return nil
+	for i, m := range messages {
+		messageToSave := *m
+		messageToSave.Text = ""
+		if i == 0 {
+			messageToSave.Text = text
+		} else {
+			messageToSave.ReplyToMessage = &tgbotapi.Message{MessageID: messages[i-1].MessageID}
+		}
+		if err := rep.SaveMessage(ctx, &messageToSave, role); err != nil {
+			return err
+		}
 	}
-	messageToSave := *messages[0]
-	messageToSave.Text = text
-	return rep.SaveMessage(ctx, &messageToSave, role)
+	return nil
 }

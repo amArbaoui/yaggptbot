@@ -106,3 +106,32 @@ func TestMessageChainRespectsDepth(t *testing.T) {
 		t.Errorf("expected [second third], got %d messages", len(chain))
 	}
 }
+
+func TestMessageChainFromAnyChunkOfSplitReply(t *testing.T) {
+	rep := newTestMessageRepository(t)
+	saveTestMessage(t, rep, 1, 1, 0, "question", "user")
+	chunks := []*tgbotapi.Message{
+		{MessageID: 2, Chat: &tgbotapi.Chat{ID: 1}, ReplyToMessage: &tgbotapi.Message{MessageID: 1}, Text: "first"},
+		{MessageID: 3, Chat: &tgbotapi.Chat{ID: 1}, ReplyToMessage: &tgbotapi.Message{MessageID: 1}, Text: "second"},
+		{MessageID: 4, Chat: &tgbotapi.Chat{ID: 1}, ReplyToMessage: &tgbotapi.Message{MessageID: 1}, Text: "third"},
+	}
+	if err := rep.SaveMessages(context.Background(), chunks, "**full** answer", "assistant"); err != nil {
+		t.Fatalf("failed to save chunks: %v", err)
+	}
+	for _, chunkId := range []int64{2, 3, 4} {
+		chain, err := rep.GetMessageChain(context.Background(), 1, chunkId, 30)
+		if err != nil {
+			t.Fatalf("chunk %d: failed to get chain: %v", chunkId, err)
+		}
+		if len(chain) != 2 || chain[0].Text != "question" || chain[1].Text != "**full** answer" {
+			texts := make([]string, 0, len(chain))
+			for _, m := range chain {
+				texts = append(texts, m.Text)
+			}
+			t.Errorf("chunk %d: expected [question, **full** answer], got %q", chunkId, texts)
+		}
+	}
+	if chunks[0].Text != "first" {
+		t.Errorf("sent messages should not be mutated")
+	}
+}

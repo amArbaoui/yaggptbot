@@ -27,7 +27,7 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 	llmCompetionRequest, err := bot.GetConversationChain(ctx, m)
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotFound) {
-			replyText := "Failed to find reply message(s). Please send your question as a new message or if my previous message were splitted, reply to the first chunk."
+			replyText := "Failed to find reply message(s). Please send your question as a new message."
 			bot.TextReplyWithContext(ctx, replyText, m)
 			return
 		}
