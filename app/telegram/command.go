@@ -104,6 +104,16 @@ func CancelCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 	bot.TextReplyWithContext(ctx, respText, m)
 }
 
+func NewConversationCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
+	m := update.Message
+	if err := bot.msgService.ResetConversation(ctx, m.Chat.ID, int64(m.MessageID)); err != nil {
+		log.Printf("failed to reset conversation in chat %d, %v", m.Chat.ID, err)
+		bot.TextReplyWithContext(ctx, config.NewConversationFailedMessage, m)
+		return
+	}
+	bot.TextReplyWithContext(ctx, config.NewConversationMessage, m)
+}
+
 func SetModelCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 	m := update.Message
 	model, err := bot.userService.GetUserModelByTgId(ctx, m.From.ID)

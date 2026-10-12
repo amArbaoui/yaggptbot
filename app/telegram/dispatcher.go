@@ -22,6 +22,7 @@ type Dispatcher struct {
 
 // botCommands are shown in the telegram commands menu
 var botCommands = []tgbotapi.BotCommand{
+	{Command: "new", Description: "Start a new conversation"},
 	{Command: "setmodel", Description: "Choose the model"},
 	{Command: "promptset", Description: "Set a custom prompt"},
 	{Command: "promptreset", Description: "Remove the custom prompt"},
@@ -51,6 +52,7 @@ func GetUserDispatcher() *Dispatcher {
 	userDispatcher.RegisterCommand("promptreset", ResetPromtCommand)
 	userDispatcher.RegisterCommand("setmodel", SetModelCommand)
 	userDispatcher.RegisterCommand("cancel", CancelCommand)
+	userDispatcher.RegisterCommand("new", NewConversationCommand)
 
 	return userDispatcher
 

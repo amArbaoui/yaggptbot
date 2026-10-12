@@ -10,13 +10,13 @@ type LlmService struct {
 	Providers map[string]ChatProvider
 }
 
-func (l LlmService) GetCompletionMessage(ctx context.Context, messages []CompletionRequestMessage, userPromt string, model string) (string, error) {
+func (l LlmService) GetCompletionMessage(ctx context.Context, messages []CompletionRequestMessage, userPromt string, model string, opts CompletionOptions) (string, error) {
 	select {
 	case <-ctx.Done():
 		return "", ctx.Err()
 	default:
 	}
-	
+
 	providerName, ok := config.ModelMap[model]
 	if !ok {
 		return "", fmt.Errorf("%w: %s", ErrModelNotFound, model)
@@ -25,5 +25,5 @@ func (l LlmService) GetCompletionMessage(ctx context.Context, messages []Complet
 	if !ok {
 		return "", fmt.Errorf("%w: %s", ErrProviderNotFound, model)
 	}
-	return provider.GetCompletionMessage(ctx, messages, userPromt, model)
+	return provider.GetCompletionMessage(ctx, messages, userPromt, model, opts)
 }

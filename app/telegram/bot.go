@@ -142,16 +142,18 @@ func (b *GPTBot) keepTyping(ctx context.Context, chatId int64) (stop func()) {
 	return cancel
 }
 
-// systemPrompt returns the default prompt extended with the user's custom prompt, if any
+// systemPrompt returns the default prompt with the current date, extended with the user's custom prompt, if any
 func (b *GPTBot) systemPrompt(ctx context.Context, tgId int64) string {
+	// models don't know the current date and treat their training cutoff as "now"
+	defaultPrompt := fmt.Sprintf("%s\nCurrent date: %s", b.config.DefaultPrompt, time.Now().UTC().Format("2006-01-02"))
 	prompt, err := b.userService.GetUserPromptByTgId(ctx, tgId)
 	if err != nil {
 		if !errors.Is(err, user.ErrPromptNotFound) {
 			log.Println(err)
 		}
-		return b.config.DefaultPrompt
+		return defaultPrompt
 	}
-	return fmt.Sprintf("%s\nUSER_PROMPT: %s", b.config.DefaultPrompt, prompt.Prompt)
+	return fmt.Sprintf("%s\nUSER_PROMPT: %s", defaultPrompt, prompt.Prompt)
 }
 
 // answer sends the conversation to the user's model and replies with the completion
@@ -162,7 +164,8 @@ func (b *GPTBot) answer(ctx context.Context, m *tgbotapi.Message, conversation [
 		model = config.DefaultVisionModel
 	}
 	stopTyping := b.keepTyping(ctx, m.Chat.ID)
-	llmResp, err := b.llmService.GetCompletionMessage(ctx, conversation, b.systemPrompt(ctx, m.From.ID), model)
+	opts := llm.CompletionOptions{WebTools: config.WebToolsEnabled}
+	llmResp, err := b.llmService.GetCompletionMessage(ctx, conversation, b.systemPrompt(ctx, m.From.ID), model, opts)
 	stopTyping()
 	if err != nil {
 		b.replyLlmError(ctx, m, model, err)
@@ -185,4 +188,23 @@ func (b *GPTBot) userModel(ctx context.Context, tgId int64) string {
 		return config.DefaultModel
 	}
 	return model.Model
+}
+
+// withImplicitReply makes a message without a reply continue the latest conversation in the chat:
+// the one the bot answered within config.ConversationTimeout, unless it was reset with /new.
+func (b *GPTBot) withImplicitReply(ctx context.Context, m *tgbotapi.Message) *tgbotapi.Message {
+	if m.ReplyToMessage != nil {
+		return m
+	}
+	lastMessageId, err := b.msgService.GetLastAssistantMessageId(ctx, m.Chat.ID, time.Now().Add(-config.ConversationTimeout))
+	if err != nil {
+		log.Printf("failed to get last message in chat %d, %v", m.Chat.ID, err)
+		return m
+	}
+	if lastMessageId == 0 {
+		return m
+	}
+	msg := *m
+	msg.ReplyToMessage = &tgbotapi.Message{MessageID: int(lastMessageId), Chat: m.Chat}
+	return &msg
 }

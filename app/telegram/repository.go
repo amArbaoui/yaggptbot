@@ -11,9 +11,23 @@ import (
 )
 
 const (
-	sqlGetMessge       = "select chat_id, message_id, reply_id, message_text, role, image_file_id, created_at, updated_at from message where chat_id = $1 and message_id = $2 and role != 'system'"
-	sqlSaveMessage     = "insert into message (chat_id, message_id, reply_id, message_text, role, image_file_id, created_at, updated_at) values (:chat_id, :message_id, :reply_id, :message_text, :role, :image_file_id, :created_at, :updated_at)"
-	sqlGetMessageChain = `
+	sqlGetMessge                 = "select chat_id, message_id, reply_id, message_text, role, image_file_id, created_at, updated_at from message where chat_id = $1 and message_id = $2 and role != 'system'"
+	sqlSaveMessage               = "insert into message (chat_id, message_id, reply_id, message_text, role, image_file_id, created_at, updated_at) values (:chat_id, :message_id, :reply_id, :message_text, :role, :image_file_id, :created_at, :updated_at)"
+	sqlGetLastAssistantMessageId = `
+	select
+		coalesce(max(m.message_id), 0)
+	from
+		message m
+	left join conversation c on
+		c.chat_id = m.chat_id
+	where
+		m.chat_id = $1
+		and m.role = 'assistant'
+		and m.created_at >= $2
+		and m.message_id > coalesce(c.reset_after_message_id, 0)
+	`
+	sqlResetConversation = "insert or replace into conversation (chat_id, reset_after_message_id) values ($1, $2)"
+	sqlGetMessageChain   = `
 	with recursive x as (
 		select
 			chat_id,
@@ -142,6 +156,20 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 		return fmt.Errorf("%w:%v", storage.ErrMessageNotCreated, err)
 	}
 	return nil
+}
+
+// GetLastAssistantMessageId returns the id of the latest assistant message in the chat sent after the given time
+// and after the last conversation reset, or 0 if there is no such message.
+func (rep *MessageDbRepository) GetLastAssistantMessageId(ctx context.Context, chatId int64, after time.Time) (int64, error) {
+	var messageId int64
+	err := rep.db.GetContext(ctx, &messageId, sqlGetLastAssistantMessageId, chatId, after.Unix())
+	return messageId, err
+}
+
+// ResetConversation makes messages up to messageId not continued implicitly
+func (rep *MessageDbRepository) ResetConversation(ctx context.Context, chatId int64, messageId int64) error {
+	_, err := rep.db.ExecContext(ctx, sqlResetConversation, chatId, messageId)
+	return err
 }
 
 // SaveMessages saves a reply sent as several telegram messages.

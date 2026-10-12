@@ -10,12 +10,17 @@ const HowToUseItMessage = `🚀 Let's get started!
    - Just send a message and the bot will answer.
 
 2. Keep the context
-   - Reply to the bot's message to continue the conversation. A message without a reply starts a new one.
+   - Just keep writing: the bot continues the conversation for 30 minutes after its last answer.
+   - Use /new to start a new conversation, or reply to an older message to continue from it.
 
 3. Images
    - Send a photo, optionally with a caption, to ask about it.
 
-4. Commands
+4. Web
+   - The bot searches the web when it needs fresh information, and can read links you send.
+
+5. Commands
+   - /new - start a new conversation
    - /setmodel - choose the model
    - /promptset - set a custom prompt, the bot will ask for its text
    - /promptreset - remove your custom prompt
@@ -41,6 +46,8 @@ const (
 	ImageTooLargeMessage         = "The image is too large, please send a smaller one"
 	DocumentsNotSupportedMessage = "Only images are supported as files for now"
 	DefaultImageCaption          = "Describe this image"
+	NewConversationMessage       = "Started a new conversation"
+	NewConversationFailedMessage = "Failed to start a new conversation, please try again"
 )
 
 const (
@@ -62,6 +69,26 @@ const (
 	ClaudeSonnet5    = "claude-sonnet-5"
 	Gemini3Dot7Flash = "gemini-3.7-flash"
 	DeepseekV4Flash  = "deepseek-chat-v3.1"
+)
+
+// OpenRouter server tools, the model decides when to search the web or fetch a page
+const (
+	WebToolsEnabled          = true
+	WebSearchEngine          = "exa"
+	WebSearchMaxResults      = 5
+	WebSearchMaxUses         = 3
+	WebFetchEngine           = "openrouter"
+	WebFetchMaxUses          = 3
+	WebFetchMaxContentTokens = 20000
+	// MaxSources is how many cited pages are listed under the answer
+	MaxSources = 5
+)
+
+const (
+	// MaxContextImages is how many latest images of the conversation are sent to the model
+	MaxContextImages = 3
+	// ConversationTimeout is how long a message without a reply continues the latest conversation
+	ConversationTimeout = 30 * time.Minute
 )
 
 const DefaultModel = Gpt5Dot6Luna
