@@ -26,6 +26,7 @@ type GPTBot struct {
 	botAPI         *tgbotapi.BotAPI
 	chatService    ChatService
 	llmService     LlmService
+	mediaService   MediaService
 	msgService     MessageService
 	userService    UserService
 	botOptions     BotOptions
@@ -38,6 +39,7 @@ type GPTBot struct {
 func NewGPTBot(botApi *tgbotapi.BotAPI,
 	chatService ChatService,
 	llmservice LlmService,
+	mediaService MediaService,
 	messageService MessageService,
 	userService UserService,
 	botOptions BotOptions,
@@ -45,6 +47,7 @@ func NewGPTBot(botApi *tgbotapi.BotAPI,
 	return GPTBot{botAPI: botApi,
 		chatService:          chatService,
 		llmService:           llmservice,
+		mediaService:         mediaService,
 		msgService:           messageService,
 		userService:          userService,
 		botOptions:           botOptions,

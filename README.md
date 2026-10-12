@@ -8,7 +8,10 @@ This is just a simple TG bot, allowing users to do only one thing - chat with GP
 
 **Features:**
 * Uses openrouter, multiple models supported;
-* Holds context using TG reply to message;
+* Keeps conversation context: just keep writing, or reply to an older message to continue from it;
+* Searches the web and reads links when the model needs fresh information;
+* Understands photos, voice messages, PDFs and text files;
+* Formats answers with Telegram rich text: code blocks, tables, lists;
 * All conversations are encrypted and stored in SQLite DB;
 * User control via WebAPI;
 * Chat completion WebAPI endpoint;
@@ -33,7 +36,7 @@ OPENAI_TOKEN=OPENAI_TOKEN
 OPENROUTER_TOKEN=OPENROUTER_TOKEN
 X_API_KEY=API-KEY
 ENCRYPTION_KEY="dA6ED5MJXumah90N1irZ7KUj6LGP0pGAeN9Aj8uj9b8=" # 32 bit key string
-ADMADMIN_CHAT_ID=12345
+ADMIN_CHAT_ID=12345
 NOTIFICATION_CHAT_ID=12345
 DEFAULT_PROMPT="new prompt" # this is optional
 ```
@@ -41,6 +44,18 @@ Run docker compose up
 
 
 ## Version History
+* 0.5.0
+   * Added continuous dialog without reply, /new to start a new conversation
+   * Added web search and links reading via OpenRouter server tools
+   * Added voice messages and audio files support
+   * Added PDF and text documents support
+   * Added Telegram HTML formatting for answers, long answers are split by blocks
+   * Added /help, /cancel, commands menu and typing indicator
+   * Photos use the selected model and prompt, follow-up questions keep the image
+   * Custom prompt is sent as system prompt, current date is added to the prompt
+   * Fixed messages of different chats mixing in conversation context
+   * Fixed silent failures on LLM errors, /setmodel keyboard and registration flow
+   * Bot token is no longer sent to LLM providers with images
 * 0.4.11
    * Updated dependencies, go version
    * Removed CGO

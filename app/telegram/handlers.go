@@ -23,37 +23,33 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 	default:
 	}
 
-	m := bot.withImplicitReply(ctx, update.Message)
-	conversation, err := bot.GetConversationChain(ctx, m)
+	m := update.Message
+	if strings.TrimSpace(m.Text) == "" {
+		bot.TextReplyWithContext(ctx, config.UnsupportedMessage, m)
+		return
+	}
+	bot.handleText(ctx, m)
+}
+
+// handleText answers a text message, continuing the conversation it belongs to.
+// Voice messages and documents are converted to text and answered here too.
+func (b *GPTBot) handleText(ctx context.Context, m *tgbotapi.Message) {
+	m = b.withImplicitReply(ctx, m)
+	conversation, err := b.GetConversationChain(ctx, m)
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotFound) {
 			replyText := "Failed to find reply message(s). Please send your question as a new message."
-			bot.TextReplyWithContext(ctx, replyText, m)
+			b.TextReplyWithContext(ctx, replyText, m)
 			return
 		}
 		log.Println(err)
 	}
 	conversation = append(conversation, llm.CompletionRequestMessage{Text: m.Text, Role: "user"})
-	err = bot.msgService.SaveMessage(ctx, m, "user")
+	err = b.msgService.SaveMessage(ctx, m, "user")
 	if err != nil {
 		log.Println(err)
 	}
-	bot.answer(ctx, m, conversation)
-}
-
-func UserDocumentHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-	}
-
-	m := update.Message
-	if imageFileID(m) != "" {
-		UserPhotoHandler(ctx, bot, update)
-		return
-	}
-	bot.TextReplyWithContext(ctx, config.DocumentsNotSupportedMessage, m)
+	b.answer(ctx, m, conversation)
 }
 
 // UserPhotoHandler handles photos and images sent as files
@@ -73,7 +69,7 @@ func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 	if err != nil {
 		log.Printf("failed to get image for message %d: %v", m.MessageID, err)
 		replyText := config.ImageFailedMessage
-		if errors.Is(err, ErrImageTooLarge) {
+		if errors.Is(err, ErrFileTooLarge) {
 			replyText = config.ImageTooLargeMessage
 		}
 		bot.TextReplyWithContext(ctx, replyText, m)

@@ -122,3 +122,12 @@ func TestRenderSourcesList(t *testing.T) {
 		t.Errorf("expected %q, got %q", expected, got)
 	}
 }
+
+func TestEscapeMarkdown(t *testing.T) {
+	text := "1. not a list, *not bold*, [no](link) <b> # - x_y"
+	got := Render("> 🎤 "+EscapeMarkdown(text), 4096)
+	expected := "<blockquote>🎤 1. not a list, *not bold*, [no](link) &lt;b&gt; # - x_y</blockquote>"
+	if len(got) != 1 || got[0] != expected {
+		t.Errorf("expected %q, got %q", expected, got)
+	}
+}

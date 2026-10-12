@@ -283,3 +283,15 @@ func wrap(tag string, content string) string {
 func escape(s string) string {
 	return html.EscapeString(s)
 }
+
+// EscapeMarkdown escapes markdown syntax, so that text is rendered as is
+func EscapeMarkdown(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if strings.ContainsRune("\\`*_{}[]()<>#+-.!|~", r) {
+			b.WriteRune('\\')
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}

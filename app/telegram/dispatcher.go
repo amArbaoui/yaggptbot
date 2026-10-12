@@ -44,6 +44,7 @@ func GetUserDispatcher() *Dispatcher {
 	userDispatcher.RegisterBaseHandler("callback", CallbackHandler)
 	userDispatcher.RegisterBaseHandler("document", UserDocumentHandler)
 	userDispatcher.RegisterBaseHandler("photo", UserPhotoHandler)
+	userDispatcher.RegisterBaseHandler("voice", UserVoiceHandler)
 	userDispatcher.RegisterBaseHandler("message", UserMesasgeHandler)
 	userDispatcher.RegisterStateHandler(user.SETTING_PROMT, SetPromptHandler)
 	userDispatcher.RegisterPublicCommand("start", StartCommand)
@@ -110,6 +111,10 @@ func (d *Dispatcher) HandleUpdate(ctx context.Context, bot *GPTBot, update *tgbo
 	}
 	if update.Message.Photo != nil {
 		d.baseHandlers["photo"](ctx, bot, update)
+		return
+	}
+	if update.Message.Voice != nil || update.Message.Audio != nil {
+		d.baseHandlers["voice"](ctx, bot, update)
 		return
 	}
 	state, err := bot.userService.GetUserState(ctx, update.SentFrom().ID)

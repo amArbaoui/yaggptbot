@@ -13,8 +13,8 @@ const HowToUseItMessage = `🚀 Let's get started!
    - Just keep writing: the bot continues the conversation for 30 minutes after its last answer.
    - Use /new to start a new conversation, or reply to an older message to continue from it.
 
-3. Images
-   - Send a photo, optionally with a caption, to ask about it.
+3. Files and voice
+   - Send a photo, a voice message, a PDF or a text file, optionally with a caption with your question.
 
 4. Web
    - The bot searches the web when it needs fresh information, and can read links you send.
@@ -44,7 +44,18 @@ const (
 	NothingToCancelMessage       = "Nothing to cancel"
 	ImageFailedMessage           = "Failed to handle the image, please try again"
 	ImageTooLargeMessage         = "The image is too large, please send a smaller one"
-	DocumentsNotSupportedMessage = "Only images are supported as files for now"
+	DocumentsNotSupportedMessage = "This file type is not supported. Send a PDF, a text or code file, an image or an audio file"
+	UnsupportedMessage           = "Only text, voice messages, photos and files are supported"
+	FileTooLargeMessage          = "The file is too large, the limit is 20 MB"
+	DocumentFailedMessage        = "Failed to read the file, please try again"
+	DocumentNoTextMessage        = "No text found in the document"
+	DocumentTruncatedMessage     = "⚠️ The document is too long, only its first %d characters are used"
+	DefaultDocumentCaption       = "Briefly summarize this document"
+	VoiceTooLongMessage          = "The recording is too long, the limit is %d minutes"
+	VoiceFailedMessage           = "Failed to recognize the recording, please try again"
+	SpeechNotRecognizedMessage   = "No speech recognized in the recording"
+	UnsupportedAudioMessage      = "This audio format is not supported"
+	ForwardedVoicePrefix         = "Transcript of a forwarded voice message:\n\n"
 	DefaultImageCaption          = "Describe this image"
 	NewConversationMessage       = "Started a new conversation"
 	NewConversationFailedMessage = "Failed to start a new conversation, please try again"
@@ -82,6 +93,20 @@ const (
 	WebFetchMaxContentTokens = 20000
 	// MaxSources is how many cited pages are listed under the answer
 	MaxSources = 5
+)
+
+// Voice messages and documents are converted to text before they are sent to the user's model
+const (
+	TranscriptionModel = "openai/whisper-large-v3-turbo"
+	MaxVoiceDuration   = 10 * 60 // seconds
+	// MaxFileSize is the Telegram Bot API download limit
+	MaxFileSize = 20 * 1024 * 1024
+	// DocumentParserModel is called only to get the parsed PDF, the cheapest model is enough
+	DocumentParserModel = DeepseekV4Flash
+	PDFEngine           = "cloudflare-ai"
+	PDFOCREngine        = "mistral-ocr"
+	// MaxDocumentChars limits document text sent to the model, it is resent with every follow-up
+	MaxDocumentChars = 100_000
 )
 
 const (

@@ -7,6 +7,20 @@ type ChatCompletionRequest struct {
 	Reasoning Reasoning           `json:"reasoning"`
 	Messages  []CompletionMessage `json:"messages"`
 	Tools     []Tool              `json:"tools,omitempty"`
+	Plugins   []Plugin            `json:"plugins,omitempty"`
+	MaxTokens int                 `json:"max_tokens,omitempty"`
+}
+
+// Plugin configures OpenRouter request plugins, e.g. the file parser for PDFs
+type Plugin struct {
+	ID  string            `json:"id"`
+	PDF *PDFPluginOptions `json:"pdf,omitempty"`
+}
+
+const PluginFileParser = "file-parser"
+
+type PDFPluginOptions struct {
+	Engine string `json:"engine"`
 }
 
 // Tool is an OpenRouter server tool, executed by OpenRouter when the model calls it
@@ -47,8 +61,16 @@ type ChoiceContent struct {
 }
 
 type Annotation struct {
-	Type        string       `json:"type"`
-	URLCitation *URLCitation `json:"url_citation,omitempty"`
+	Type        string          `json:"type"`
+	URLCitation *URLCitation    `json:"url_citation,omitempty"`
+	File        *FileAnnotation `json:"file,omitempty"`
+}
+
+// FileAnnotation holds the parsed content of a file sent in the request
+type FileAnnotation struct {
+	Hash    string              `json:"hash"`
+	Name    string              `json:"name"`
+	Content []CompletionContent `json:"content"`
 }
 
 type URLCitation struct {
@@ -60,6 +82,12 @@ type CompletionContent struct {
 	Type     string    `json:"type"`
 	Text     *string   `json:"text,omitempty"`
 	ImageUrl *ImageURL `json:"image_url,omitempty"`
+	File     *File     `json:"file,omitempty"`
+}
+
+type File struct {
+	Filename string `json:"filename"`
+	FileData string `json:"file_data"`
 }
 
 type ImageURL struct {
@@ -100,4 +128,19 @@ type Usage struct {
 
 type ServerToolUse struct {
 	WebSearchRequests int `json:"web_search_requests"`
+}
+
+type TranscriptionRequest struct {
+	Model      Model      `json:"model"`
+	InputAudio InputAudio `json:"input_audio"`
+}
+
+type InputAudio struct {
+	Data   string `json:"data"`
+	Format string `json:"format"`
+}
+
+type TranscriptionResponse struct {
+	Text  string    `json:"text"`
+	Error *ApiError `json:"error,omitempty"`
 }

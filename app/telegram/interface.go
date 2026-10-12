@@ -14,6 +14,12 @@ type LlmService interface {
 	GetCompletionMessage(ctx context.Context, messages []llm.CompletionRequestMessage, prompt string, model string, opts llm.CompletionOptions) (string, error)
 }
 
+// MediaService converts voice messages and documents to text
+type MediaService interface {
+	Transcribe(ctx context.Context, audio []byte, format string) (string, error)
+	ExtractPDFText(ctx context.Context, filename string, pdf []byte) (string, error)
+}
+
 type MessageService interface {
 	GetMessage(ctx context.Context, chatId int64, messageId int64) (*Message, error)
 	GetMessageChain(ctx context.Context, chatId int64, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
