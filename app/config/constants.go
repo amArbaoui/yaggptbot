@@ -29,6 +29,8 @@ const (
 	RegistrationRequestedMessage = "Your request has been sent to the admin. You will get a message once it is approved"
 	RegistrationPendingMessage   = "Your request is already waiting for the admin's approval"
 	RegistrationFailedMessage    = "Failed to send your request to the admin, please try again later"
+	SelectModelMessage           = "You are using %s. Please select new model"
+	SetModelFailedMessage        = "Failed to set model, please try again"
 )
 
 const (

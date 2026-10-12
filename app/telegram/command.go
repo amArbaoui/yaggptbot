@@ -98,7 +98,7 @@ func SetModelCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) 
 		log.Printf("failed to get modle for user %d, %v", m.From.ID, err)
 		return
 	}
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("You are using %s. Please select new model", model.Model))
-	msg.ReplyMarkup = NewModelKeyboard(update.Message.Chat.ID)
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(config.SelectModelMessage, model.Model))
+	msg.ReplyMarkup = NewModelKeyboard(update.Message.Chat.ID, model.Model)
 	bot.botAPI.Send(msg)
 }

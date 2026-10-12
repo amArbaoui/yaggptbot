@@ -221,26 +221,48 @@ func handleModelSelectionCallback(ctx context.Context, update *tgbotapi.Update, 
 	default:
 	}
 
-	var reply string
-	data := update.CallbackData()
-	split := strings.Split(data, ":")
-	operation := split[1]
-	modelName := split[2]
-	userId, _ := strconv.Atoi(split[3])
-	userEntity, err := bot.userService.GetUserByTgId(ctx, int64(userId))
-	if err != nil {
-		reply = "error, failed to set model"
-		bot.botAPI.Send(tgbotapi.NewMessage(int64(userId), reply))
+	query := update.CallbackQuery
+	split := strings.Split(query.Data, ":")
+	if len(split) < 3 || split[1] != "set" {
 		return
 	}
-	if operation == "set" {
-		err := bot.userService.SetUserModel(ctx, &user.UserModel{UserID: userEntity.Id, Model: modelName})
-		if err != nil {
-			reply = "error, failed to set model"
+	modelName := split[2]
+	answer := tgbotapi.NewCallback(query.ID, "")
+	defer func() {
+		if _, err := bot.botAPI.Request(answer); err != nil {
+			log.Printf("failed to answer callback, %v", err)
 		}
-		reply = fmt.Sprintf("you're now using %s", modelName)
-		bot.botAPI.Send(tgbotapi.NewMessage(int64(userId), reply))
+	}()
 
+	userEntity, err := bot.userService.GetUserByTgId(ctx, query.From.ID)
+	if err != nil {
+		log.Printf("failed to get user %d, %v", query.From.ID, err)
+		answer.Text = config.SetModelFailedMessage
+		return
+	}
+	if _, ok := config.ModelMap[modelName]; !ok {
+		log.Printf("unknown model %s selected by user %d", modelName, query.From.ID)
+		answer.Text = config.SetModelFailedMessage
+		return
+	}
+	err = bot.userService.SetUserModel(ctx, &user.UserModel{UserID: userEntity.Id, Model: modelName})
+	if err != nil {
+		log.Printf("failed to set model for user %d, %v", query.From.ID, err)
+		answer.Text = config.SetModelFailedMessage
+		return
+	}
+	answer.Text = fmt.Sprintf("You're now using %s", modelName)
+	if query.Message == nil {
+		return
+	}
+	edit := tgbotapi.NewEditMessageTextAndMarkup(
+		query.Message.Chat.ID,
+		query.Message.MessageID,
+		fmt.Sprintf(config.SelectModelMessage, modelName),
+		NewModelKeyboard(query.Message.Chat.ID, modelName),
+	)
+	if _, err := bot.botAPI.Request(edit); err != nil {
+		log.Printf("failed to update model keyboard, %v", err)
 	}
 }
 
