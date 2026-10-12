@@ -14,8 +14,8 @@ type LlmService interface {
 }
 
 type MessageService interface {
-	GetMessage(ctx context.Context, messageId int64) (*Message, error)
-	GetMessageChain(ctx context.Context, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
+	GetMessage(ctx context.Context, chatId int64, messageId int64) (*Message, error)
+	GetMessageChain(ctx context.Context, chatId int64, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
 	SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error
 	SaveMessages(ctx context.Context, messages []*tgbotapi.Message, role string) error
 }
@@ -44,8 +44,8 @@ type UserService interface {
 }
 
 type MessageRepository interface {
-	GetMessageById(ctx context.Context, messageId int64) (*storage.Message, error)
-	GetMessageChain(ctx context.Context, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
+	GetMessageById(ctx context.Context, chatId int64, messageId int64) (*storage.Message, error)
+	GetMessageChain(ctx context.Context, chatId int64, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
 	SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error
 	SaveMessages(ctx context.Context, messages []*tgbotapi.Message, role string) error
 }

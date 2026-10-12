@@ -246,7 +246,7 @@ func (b *GPTBot) GetConversationChain(ctx context.Context, m *tgbotapi.Message) 
 	if m.ReplyToMessage == nil {
 		return completionRequest, nil
 	}
-	messageChain, err := b.msgService.GetMessageChain(ctx, int64(m.ReplyToMessage.MessageID), b.botOptions.MaxConversationDepth)
+	messageChain, err := b.msgService.GetMessageChain(ctx, m.Chat.ID, int64(m.ReplyToMessage.MessageID), b.botOptions.MaxConversationDepth)
 	if err != nil {
 		return completionRequest, err
 	}
