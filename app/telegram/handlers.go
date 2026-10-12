@@ -24,48 +24,21 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 	}
 
 	m := update.Message
-	llmCompetionRequest, err := bot.GetConversationChain(ctx, m)
+	conversation, err := bot.GetConversationChain(ctx, m)
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotFound) {
 			replyText := "Failed to find reply message(s). Please send your question as a new message."
 			bot.TextReplyWithContext(ctx, replyText, m)
 			return
 		}
-
+		log.Println(err)
 	}
-	llmCompetionRequest = append(llmCompetionRequest, llm.CompletionRequestMessage{Text: m.Text, Role: "user"})
+	conversation = append(conversation, llm.CompletionRequestMessage{Text: m.Text, Role: "user"})
 	err = bot.msgService.SaveMessage(ctx, m, "user")
 	if err != nil {
 		log.Println(err)
 	}
-
-	promptText := bot.systemPrompt(ctx, update.SentFrom().ID)
-
-	model, err := bot.userService.GetUserModelByTgId(ctx, update.SentFrom().ID)
-	if err != nil {
-		log.Println(err)
-		model = &user.UserModel{Model: config.DefaultModel}
-	}
-	stopTyping := bot.keepTyping(ctx, m.Chat.ID)
-	llmResp, err := bot.llmService.GetCompletionMessage(ctx, llmCompetionRequest, promptText, model.Model)
-	stopTyping()
-	if err != nil {
-		bot.replyLlmError(ctx, m, model.Model, err)
-		return
-	}
-
-	aiResp := MessageOut{Text: llmResp, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
-	messages, err := bot.chatService.SendMessage(ctx, aiResp)
-	if err != nil {
-		log.Printf("failed to send ai response, %s", err)
-		return
-	}
-
-	err = bot.msgService.SaveMessages(ctx, messages, llmResp, "assistant")
-	if err != nil {
-		log.Println(err)
-	}
-
+	bot.answer(ctx, m, conversation)
 }
 
 func UserDocumentHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
@@ -76,64 +49,54 @@ func UserDocumentHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Upda
 	}
 
 	m := update.Message
-	text := "Documents not supported"
-	bot.TextReplyWithContext(ctx, text, m)
-
+	if imageFileID(m) != "" {
+		UserPhotoHandler(ctx, bot, update)
+		return
+	}
+	bot.TextReplyWithContext(ctx, config.DocumentsNotSupportedMessage, m)
 }
 
+// UserPhotoHandler handles photos and images sent as files
 func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
 	}
-	var text string
-	var caption string
+
 	m := update.Message
-	err := bot.msgService.SaveMessage(ctx, m, "user")
-	if err != nil {
-		log.Println(err)
-	}
-	imageUrl, err := bot.botAPI.GetFileDirectURL(m.Photo[len(m.Photo)-1].FileID)
-	if err != nil {
-		log.Printf("failed to get photo url, %s", err)
-		text = "Failed to handle photo, please try again"
-		bot.TextReplyWithContext(ctx, text, m)
+	if imageFileSize(m) > config.MaxImageSize {
+		bot.TextReplyWithContext(ctx, config.ImageTooLargeMessage, m)
 		return
 	}
-	if m.Caption != "" {
-		caption = m.Caption
-	} else {
-		caption = "Describe this image"
+	imageURL, err := bot.imageDataURL(ctx, imageFileID(m))
+	if err != nil {
+		log.Printf("failed to get image for message %d: %v", m.MessageID, err)
+		replyText := config.ImageFailedMessage
+		if errors.Is(err, ErrImageTooLarge) {
+			replyText = config.ImageTooLargeMessage
+		}
+		bot.TextReplyWithContext(ctx, replyText, m)
+		return
 	}
-	conversationChain, err := bot.GetConversationChain(ctx, m)
+	conversation, err := bot.GetConversationChain(ctx, m)
 	if err != nil {
 		log.Println(err)
-
 	}
-	conversationChain = append(conversationChain, llm.CompletionRequestMessage{
+	caption := m.Caption
+	if caption == "" {
+		caption = config.DefaultImageCaption
+	}
+	conversation = append(conversation, llm.CompletionRequestMessage{
 		Text:     caption,
 		Role:     "user",
-		ImageUrl: &imageUrl,
-	},
-	)
-	stopTyping := bot.keepTyping(ctx, m.Chat.ID)
-	llmResp, err := bot.llmService.GetCompletionMessage(ctx, conversationChain, bot.config.DefaultPrompt, config.Gpt5Dot6Luna)
-	stopTyping()
-	if err != nil {
-		bot.replyLlmError(ctx, m, config.Gpt5Dot6Luna, err)
-		return
-	}
-	msg, err := bot.TextReplyWithContext(ctx, llmResp, m)
-	if err != nil {
-		log.Printf("failed to send ai response, %s", err)
-		return
-	}
-	err = bot.msgService.SaveMessages(ctx, msg, llmResp, "assistant")
+		ImageUrl: &imageURL,
+	})
+	err = bot.msgService.SaveMessage(ctx, m, "user")
 	if err != nil {
 		log.Println(err)
 	}
-
+	bot.answer(ctx, m, conversation)
 }
 
 func CallbackHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
@@ -270,7 +233,19 @@ func (b *GPTBot) GetConversationChain(ctx context.Context, m *tgbotapi.Message) 
 		return completionRequest, err
 	}
 	for _, message := range messageChain {
-		completionRequest = append(completionRequest, llm.CompletionRequestMessage{Text: message.Text, Role: message.Role, ImageUrl: nil})
+		request := llm.CompletionRequestMessage{Text: message.Text, Role: message.Role}
+		if message.ImageFileId != nil {
+			imageURL, err := b.imageDataURL(ctx, *message.ImageFileId)
+			if err != nil {
+				log.Printf("failed to get image of message %d: %v", message.TgMsgId, err)
+			} else {
+				request.ImageUrl = &imageURL
+			}
+		}
+		if request.Text == "" && request.ImageUrl == nil {
+			continue
+		}
+		completionRequest = append(completionRequest, request)
 	}
 	return completionRequest, nil
 }

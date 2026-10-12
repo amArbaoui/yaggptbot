@@ -37,6 +37,10 @@ const (
 	InvalidPromptMessage         = "Please send the prompt as a text message, or /cancel"
 	CancelledMessage             = "Cancelled"
 	NothingToCancelMessage       = "Nothing to cancel"
+	ImageFailedMessage           = "Failed to handle the image, please try again"
+	ImageTooLargeMessage         = "The image is too large, please send a smaller one"
+	DocumentsNotSupportedMessage = "Only images are supported as files for now"
+	DefaultImageCaption          = "Describe this image"
 )
 
 const (
@@ -46,6 +50,7 @@ const (
 	MaxMessageContextDepth = 30
 	OpenAiMaxTokens        = 1000
 	TelegramMessageLimit   = 4096
+	MaxImageSize           = 10 * 1024 * 1024
 	BotDebugEnabled        = false
 	TypingActionInterval   = 4 * time.Second
 	DefaultPrompt          = `SYSTEM PROMPT:
@@ -60,3 +65,6 @@ const (
 )
 
 const DefaultModel = Gpt5Dot6Luna
+
+// DefaultVisionModel is used for conversations with images when the user model doesn't support them
+const DefaultVisionModel = Gpt5Dot6Luna

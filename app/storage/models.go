@@ -10,13 +10,14 @@ type User struct {
 }
 
 type Message struct {
-	ChatId        int64  `db:"chat_id"`
-	TgMsgId       int64  `db:"message_id"`
-	RepyToTgMsgId int64  `db:"reply_id"`
-	Text          string `db:"message_text"`
-	Role          string `db:"role"`
-	CreatedAt     int64  `db:"created_at"`
-	UpdatedAt     *int64 `db:"updated_at"`
+	ChatId        int64   `db:"chat_id"`
+	TgMsgId       int64   `db:"message_id"`
+	RepyToTgMsgId int64   `db:"reply_id"`
+	Text          string  `db:"message_text"`
+	Role          string  `db:"role"`
+	ImageFileId   *string `db:"image_file_id"`
+	CreatedAt     int64   `db:"created_at"`
+	UpdatedAt     *int64  `db:"updated_at"`
 }
 
 type Prompt struct {

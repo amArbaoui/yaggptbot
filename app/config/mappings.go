@@ -13,6 +13,13 @@ var ModelMap = map[string]string{
 	Gpt5Dot6Luna:     OpenRouter,
 }
 
+var ModelSupportsImages = map[string]bool{
+	ClaudeSonnet5:    true,
+	Gemini3Dot7Flash: true,
+	DeepseekV4Flash:  false,
+	Gpt5Dot6Luna:     true,
+}
+
 var ModelReasoningEffort = map[string]string{
 	ClaudeSonnet5:    "none",
 	Gemini3Dot7Flash: "minimal",

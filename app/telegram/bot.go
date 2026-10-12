@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/config"
+	"amArbaoui/yaggptbot/app/llm"
 	"amArbaoui/yaggptbot/app/user"
 	"context"
 	"errors"
@@ -151,4 +152,37 @@ func (b *GPTBot) systemPrompt(ctx context.Context, tgId int64) string {
 		return b.config.DefaultPrompt
 	}
 	return fmt.Sprintf("%s\nUSER_PROMPT: %s", b.config.DefaultPrompt, prompt.Prompt)
+}
+
+// answer sends the conversation to the user's model and replies with the completion
+func (b *GPTBot) answer(ctx context.Context, m *tgbotapi.Message, conversation []llm.CompletionRequestMessage) {
+	model := b.userModel(ctx, m.From.ID)
+	if hasImages(conversation) && !config.ModelSupportsImages[model] {
+		log.Printf("model %s doesn't support images, using %s", model, config.DefaultVisionModel)
+		model = config.DefaultVisionModel
+	}
+	stopTyping := b.keepTyping(ctx, m.Chat.ID)
+	llmResp, err := b.llmService.GetCompletionMessage(ctx, conversation, b.systemPrompt(ctx, m.From.ID), model)
+	stopTyping()
+	if err != nil {
+		b.replyLlmError(ctx, m, model, err)
+		return
+	}
+	messages, err := b.TextReplyWithContext(ctx, llmResp, m)
+	if err != nil {
+		log.Printf("failed to send ai response, %s", err)
+		return
+	}
+	if err := b.msgService.SaveMessages(ctx, messages, llmResp, "assistant"); err != nil {
+		log.Println(err)
+	}
+}
+
+func (b *GPTBot) userModel(ctx context.Context, tgId int64) string {
+	model, err := b.userService.GetUserModelByTgId(ctx, tgId)
+	if err != nil {
+		log.Println(err)
+		return config.DefaultModel
+	}
+	return model.Model
 }

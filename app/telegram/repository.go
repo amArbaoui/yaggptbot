@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	sqlGetMessge       = "select chat_id, message_id, reply_id, message_text, role, created_at, updated_at from message where chat_id = $1 and message_id = $2 and role != 'system'"
-	sqlSaveMessage     = "insert into message (chat_id, message_id, reply_id, message_text, role, created_at, updated_at) values (:chat_id, :message_id, :reply_id, :message_text, :role, :created_at, :updated_at)"
+	sqlGetMessge       = "select chat_id, message_id, reply_id, message_text, role, image_file_id, created_at, updated_at from message where chat_id = $1 and message_id = $2 and role != 'system'"
+	sqlSaveMessage     = "insert into message (chat_id, message_id, reply_id, message_text, role, image_file_id, created_at, updated_at) values (:chat_id, :message_id, :reply_id, :message_text, :role, :image_file_id, :created_at, :updated_at)"
 	sqlGetMessageChain = `
 	with recursive x as (
 		select
@@ -21,6 +21,7 @@ const (
 			reply_id,
 			message_text,
 			"role",
+			image_file_id,
 			created_at,
 			updated_at,
 			0 as depth
@@ -37,6 +38,7 @@ const (
 			m.reply_id,
 			m.message_text,
 			m."role",
+			m.image_file_id,
 			m.created_at,
 			m.updated_at,
 			x.depth + 1
@@ -57,6 +59,7 @@ const (
 			reply_id,
 			message_text,
 			"role",
+			image_file_id,
 			created_at,
 			updated_at
 		from x
@@ -96,7 +99,7 @@ func (rep *MessageDbRepository) GetMessageChain(ctx context.Context, chatId int6
 			return messageChain, err
 		}
 		// continuation chunks of a split reply have no text of their own
-		if decoded == "" {
+		if decoded == "" && m.ImageFileId == nil {
 			continue
 		}
 		m.Text = decoded
@@ -111,7 +114,15 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 	if reply := message.ReplyToMessage; reply != nil {
 		replyTo = int64(reply.MessageID)
 	}
-	encodedMessageText, err := rep.encryptService.Encrypt([]byte(message.Text))
+	text := message.Text
+	if text == "" {
+		text = message.Caption
+	}
+	var imageFileId *string
+	if fileId := imageFileID(message); fileId != "" {
+		imageFileId = &fileId
+	}
+	encodedMessageText, err := rep.encryptService.Encrypt([]byte(text))
 	if err != nil {
 		return fmt.Errorf("%w:%v", storage.ErrMessageNotEncoded, err)
 	}
@@ -122,6 +133,7 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 		RepyToTgMsgId: replyTo,
 		Text:          b64DecodedMessageText,
 		Role:          role,
+		ImageFileId:   imageFileId,
 		CreatedAt:     time.Now().Unix(),
 		UpdatedAt:     nil,
 	}

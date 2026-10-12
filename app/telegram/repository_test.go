@@ -135,3 +135,26 @@ func TestMessageChainFromAnyChunkOfSplitReply(t *testing.T) {
 		t.Errorf("sent messages should not be mutated")
 	}
 }
+
+func TestPhotoMessageIsStoredWithCaptionAndImage(t *testing.T) {
+	rep := newTestMessageRepository(t)
+	photos := []tgbotapi.PhotoSize{{FileID: "small"}, {FileID: "large"}}
+	for _, m := range []*tgbotapi.Message{
+		{MessageID: 1, Chat: &tgbotapi.Chat{ID: 1}, Photo: photos, Caption: "what is it?"},
+		{MessageID: 2, Chat: &tgbotapi.Chat{ID: 1}, Photo: photos, ReplyToMessage: &tgbotapi.Message{MessageID: 1}},
+	} {
+		if err := rep.SaveMessage(context.Background(), m, "user"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	chain, err := rep.GetMessageChain(context.Background(), 1, 2, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(chain) != 2 {
+		t.Fatalf("photo without caption should stay in the chain, got %d messages", len(chain))
+	}
+	if chain[0].Text != "what is it?" || chain[0].ImageFileId == nil || *chain[0].ImageFileId != "large" {
+		t.Errorf("expected caption and largest photo, got %q, %v", chain[0].Text, chain[0].ImageFileId)
+	}
+}

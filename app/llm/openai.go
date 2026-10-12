@@ -33,10 +33,10 @@ func (o *OpenAiProvider) GetCompletionMessage(ctx context.Context, messages []Co
 	}
 	for _, message := range messages {
 		content := make([]openai.ChatMessagePart, 0)
-		if message.ImageUrl == nil {
+		if message.Text != "" || message.ImageUrl == nil {
 			content = append(content, openai.ChatMessagePart{Type: openai.ChatMessagePartTypeText, Text: message.Text})
-
-		} else {
+		}
+		if message.ImageUrl != nil {
 			content = append(content,
 				openai.ChatMessagePart{Type: openai.ChatMessagePartTypeImageURL,
 					ImageURL: &openai.ChatMessageImageURL{

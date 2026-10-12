@@ -39,13 +39,16 @@ func (o *OpenRouterProvider) GetCompletionMessage(ctx context.Context, messages 
 		case message.Role == "assistant":
 			completionContent = message.Text
 		case message.ImageUrl != nil:
-			completionContent = []openrouter.CompletionContent{{
+			content := make([]openrouter.CompletionContent, 0, 2)
+			if message.Text != "" {
+				content = append(content, openrouter.CompletionContent{Type: "text", Text: &message.Text})
+			}
+			completionContent = append(content, openrouter.CompletionContent{
 				Type: "image_url",
 				ImageUrl: &openrouter.ImageURL{
 					Url: *message.ImageUrl,
 				},
-			},
-			}
+			})
 		default:
 			completionContent = []openrouter.CompletionContent{{
 				Type: "text",
