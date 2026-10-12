@@ -65,9 +65,9 @@ func SetPromptCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 	currentPrompt, err := bot.userService.GetUserPromptByTgId(ctx, m.From.ID)
 	var respText string
 	if err != nil {
-		respText = "Please enter new prompt"
+		respText = config.EnterPromptMessage
 	} else {
-		respText = fmt.Sprintf("Current prompt is: %s\nPlease set new prompt", currentPrompt.Prompt)
+		respText = fmt.Sprintf(config.CurrentPromptMessage, currentPrompt.Prompt)
 	}
 	resp := MessageOut{Text: respText, RepyToId: int64(m.MessageID), ChatId: m.Chat.ID}
 	err = bot.userService.SetUserState(ctx, m.From.ID, user.SETTING_PROMT)
@@ -89,6 +89,19 @@ func ResetPromtCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update
 	}
 	bot.userService.ResetUserState(ctx, m.From.ID)
 	bot.chatService.SendMessage(ctx, resp)
+}
+
+func CancelCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
+	m := update.Message
+	respText := config.CancelledMessage
+	state, err := bot.userService.GetUserState(ctx, m.From.ID)
+	if err != nil || state == "" {
+		respText = config.NothingToCancelMessage
+	}
+	if err := bot.userService.ResetUserState(ctx, m.From.ID); err != nil {
+		log.Printf("failed to reset state %v", err)
+	}
+	bot.TextReplyWithContext(ctx, respText, m)
 }
 
 func SetModelCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {

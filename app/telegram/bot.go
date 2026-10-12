@@ -2,7 +2,9 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/config"
+	"amArbaoui/yaggptbot/app/user"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"runtime/debug"
@@ -137,4 +139,16 @@ func (b *GPTBot) keepTyping(ctx context.Context, chatId int64) (stop func()) {
 		}
 	}()
 	return cancel
+}
+
+// systemPrompt returns the default prompt extended with the user's custom prompt, if any
+func (b *GPTBot) systemPrompt(ctx context.Context, tgId int64) string {
+	prompt, err := b.userService.GetUserPromptByTgId(ctx, tgId)
+	if err != nil {
+		if !errors.Is(err, user.ErrPromptNotFound) {
+			log.Println(err)
+		}
+		return b.config.DefaultPrompt
+	}
+	return fmt.Sprintf("%s\nUSER_PROMPT: %s", b.config.DefaultPrompt, prompt.Prompt)
 }

@@ -23,7 +23,6 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 	default:
 	}
 
-	var promptText string
 	m := update.Message
 	llmCompetionRequest, err := bot.GetConversationChain(ctx, m)
 	if err != nil {
@@ -40,16 +39,7 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 		log.Println(err)
 	}
 
-	prompt, err := bot.userService.GetUserPromptByTgId(ctx, update.SentFrom().ID)
-	switch err {
-	case nil:
-		promptText = prompt.Prompt
-	case user.ErrPromptNotFound:
-		promptText = bot.config.DefaultPrompt
-	default:
-		promptText = bot.config.DefaultPrompt
-		log.Println(err)
-	}
+	promptText := bot.systemPrompt(ctx, update.SentFrom().ID)
 
 	model, err := bot.userService.GetUserModelByTgId(ctx, update.SentFrom().ID)
 	if err != nil {

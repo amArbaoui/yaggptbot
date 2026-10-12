@@ -19,6 +19,7 @@ const HowToUseItMessage = `🚀 Let's get started!
    - /setmodel - choose the model
    - /promptset - set a custom prompt, the bot will ask for its text
    - /promptreset - remove your custom prompt
+   - /cancel - cancel the current operation
    - /help - show this message
 
 Happy chatting!
@@ -31,6 +32,11 @@ const (
 	RegistrationFailedMessage    = "Failed to send your request to the admin, please try again later"
 	SelectModelMessage           = "You are using %s. Please select new model"
 	SetModelFailedMessage        = "Failed to set model, please try again"
+	EnterPromptMessage           = "Please send the new prompt text, or /cancel"
+	CurrentPromptMessage         = "Current prompt is: %s\n\nPlease send the new prompt text, or /cancel"
+	InvalidPromptMessage         = "Please send the prompt as a text message, or /cancel"
+	CancelledMessage             = "Cancelled"
+	NothingToCancelMessage       = "Nothing to cancel"
 )
 
 const (

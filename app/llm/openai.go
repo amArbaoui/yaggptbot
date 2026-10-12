@@ -24,13 +24,13 @@ func (o *OpenAiProvider) GetCompletionMessage(ctx context.Context, messages []Co
 	if !ok {
 		return "", ErrModelNotFound
 	}
-	systemPromt := openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleUser,
-		Content: userPromt,
+	completionMessages := make([]openai.ChatCompletionMessage, 0, len(messages)+1)
+	if userPromt != "" {
+		completionMessages = append(completionMessages, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: userPromt,
+		})
 	}
-
-	completionMessages := make([]openai.ChatCompletionMessage, 0)
-	completionMessages = append(completionMessages, systemPromt)
 	for _, message := range messages {
 		content := make([]openai.ChatMessagePart, 0)
 		if message.ImageUrl == nil {

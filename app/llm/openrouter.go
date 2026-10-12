@@ -26,15 +26,13 @@ func (o *OpenRouterProvider) GetCompletionMessage(ctx context.Context, messages 
 	if !ok {
 		return "", ErrProviderNotFound
 	}
-	completionMessages := make([]openrouter.CompletionMessage, 0, len(messages))
-	completionMessages = append(completionMessages, openrouter.CompletionMessage{
-		Role: "user", Content: []openrouter.CompletionContent{{
-			Type: "text",
-			Text: &userPromt,
-		},
-		},
-	},
-	)
+	completionMessages := make([]openrouter.CompletionMessage, 0, len(messages)+1)
+	if userPromt != "" {
+		completionMessages = append(completionMessages, openrouter.CompletionMessage{
+			Role:    "system",
+			Content: userPromt,
+		})
+	}
 	for _, message := range messages {
 		var completionContent interface{}
 		switch {

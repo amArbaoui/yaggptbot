@@ -25,6 +25,7 @@ var botCommands = []tgbotapi.BotCommand{
 	{Command: "setmodel", Description: "Choose the model"},
 	{Command: "promptset", Description: "Set a custom prompt"},
 	{Command: "promptreset", Description: "Remove the custom prompt"},
+	{Command: "cancel", Description: "Cancel the current operation"},
 	{Command: "help", Description: "How to use the bot"},
 }
 
@@ -49,6 +50,7 @@ func GetUserDispatcher() *Dispatcher {
 	userDispatcher.RegisterCommand("promptset", SetPromptCommand)
 	userDispatcher.RegisterCommand("promptreset", ResetPromtCommand)
 	userDispatcher.RegisterCommand("setmodel", SetModelCommand)
+	userDispatcher.RegisterCommand("cancel", CancelCommand)
 
 	return userDispatcher
 
