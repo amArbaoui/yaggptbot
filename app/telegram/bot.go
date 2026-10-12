@@ -7,6 +7,7 @@ import (
 	"log"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -109,4 +110,25 @@ func (b *GPTBot) replyLlmError(ctx context.Context, m *tgbotapi.Message, model s
 		return
 	}
 	b.TextReplyWithContext(ctx, fmt.Sprintf(config.LlmErrorMessage, model), m)
+}
+
+// keepTyping shows the "typing…" chat action until the returned stop func is called.
+// Telegram clears the action after ~5 seconds, so it is resent periodically.
+func (b *GPTBot) keepTyping(ctx context.Context, chatId int64) (stop func()) {
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		ticker := time.NewTicker(config.TypingActionInterval)
+		defer ticker.Stop()
+		for {
+			if _, err := b.botAPI.Request(tgbotapi.NewChatAction(chatId, tgbotapi.ChatTyping)); err != nil {
+				log.Printf("failed to send typing action, %v", err)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+	return cancel
 }

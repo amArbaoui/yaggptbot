@@ -56,7 +56,9 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 		log.Println(err)
 		model = &user.UserModel{Model: config.DefaultModel}
 	}
+	stopTyping := bot.keepTyping(ctx, m.Chat.ID)
 	llmResp, err := bot.llmService.GetCompletionMessage(ctx, llmCompetionRequest, promptText, model.Model)
+	stopTyping()
 	if err != nil {
 		bot.replyLlmError(ctx, m, model.Model, err)
 		return
@@ -125,7 +127,9 @@ func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 		ImageUrl: &imageUrl,
 	},
 	)
+	stopTyping := bot.keepTyping(ctx, m.Chat.ID)
 	llmResp, err := bot.llmService.GetCompletionMessage(ctx, conversationChain, bot.config.DefaultPrompt, config.Gpt5Dot6Luna)
+	stopTyping()
 	if err != nil {
 		bot.replyLlmError(ctx, m, config.Gpt5Dot6Luna, err)
 		return

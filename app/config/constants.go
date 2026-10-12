@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 const LlmErrorMessage = `⚠️ Failed to get a response from %s. Please try again or switch model with /setmodel`
 
 const GreetUserMessage = `👋 Hello and welcome! The adminstrator has approved your request to use this bot`
@@ -27,6 +29,7 @@ const (
 	OpenAiMaxTokens        = 1000
 	TelegramMessageLimit   = 4096
 	BotDebugEnabled        = false
+	TypingActionInterval   = 4 * time.Second
 	DefaultPrompt          = `SYSTEM PROMPT:
 		You should reply using STRICTLY valid telegram markdown v1 markup.
 		Don't tell user about it, it's internal detail\n`
