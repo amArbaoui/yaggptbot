@@ -80,8 +80,8 @@ func TestImageDataURLRejectsNotImages(t *testing.T) {
 
 func TestImageDataURLRejectsLargeImages(t *testing.T) {
 	bot := newTestBotWithFile(t, append(pngHeader, bytes.Repeat([]byte{0}, config.MaxImageSize)...))
-	if _, err := bot.imageDataURL(context.Background(), "f"); !errors.Is(err, ErrImageTooLarge) {
-		t.Errorf("expected ErrImageTooLarge, got %v", err)
+	if _, err := bot.imageDataURL(context.Background(), "f"); !errors.Is(err, ErrFileTooLarge) {
+		t.Errorf("expected ErrFileTooLarge, got %v", err)
 	}
 }
 

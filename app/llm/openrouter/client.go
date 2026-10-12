@@ -31,40 +31,51 @@ type Client struct {
 
 func (c *Client) GetChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	var completion ChatCompletionResponse
-	url := fmt.Sprintf("%s/chat/completions", c.baseUrl)
-	payload, err := json.Marshal(request)
-	if err != nil {
-		return nil, err
-	}
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
-	response, err := c.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-	if code := response.StatusCode; code != http.StatusOK {
-		log.Printf("failed to call openrouter, received %d: %s", code, truncate(body, maxLoggedBodyLen))
-		return nil, fmt.Errorf("%w: status %d", ErrOpenrouterApiCallFail, code)
-	}
-
-	if err := json.Unmarshal(body, &completion); err != nil {
+	if err := c.post(ctx, "/chat/completions", request, &completion); err != nil {
 		return nil, err
 	}
 	if completion.Error != nil {
 		return nil, fmt.Errorf("%w: %d %s", ErrOpenrouterApiCallFail, completion.Error.Code, completion.Error.Message)
 	}
 	return &completion, nil
+}
 
+func (c *Client) Transcribe(ctx context.Context, request TranscriptionRequest) (*TranscriptionResponse, error) {
+	var transcription TranscriptionResponse
+	if err := c.post(ctx, "/audio/transcriptions", request, &transcription); err != nil {
+		return nil, err
+	}
+	if transcription.Error != nil {
+		return nil, fmt.Errorf("%w: %d %s", ErrOpenrouterApiCallFail, transcription.Error.Code, transcription.Error.Message)
+	}
+	return &transcription, nil
+}
+
+func (c *Client) post(ctx context.Context, path string, request any, response any) error {
+	payload, err := json.Marshal(request)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseUrl+path, bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if code := resp.StatusCode; code != http.StatusOK {
+		log.Printf("failed to call openrouter %s, received %d: %s", path, code, truncate(body, maxLoggedBodyLen))
+		return fmt.Errorf("%w: status %d", ErrOpenrouterApiCallFail, code)
+	}
+	return json.Unmarshal(body, response)
 }
 
 func NewOpenrouterClient(baseUrl string, apiKey string) *Client {
