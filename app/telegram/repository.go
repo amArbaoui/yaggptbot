@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/storage"
-	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -12,8 +11,8 @@ import (
 )
 
 const (
-	sqlGetMessge       = "select chat_id, message_id, reply_id, message_text, role, created_at, updated_at from message where chat_id = $1 and message_id = $2 and role != 'system'"
-	sqlSaveMessage     = "insert into message (chat_id, message_id, reply_id, message_text, role, created_at, updated_at) values (:chat_id, :message_id, :reply_id, :message_text, :role, :created_at, :updated_at)"
+	sqlGetMessge       = "select chat_id, message_id, reply_id, message_text, role, image_file_id, created_at, updated_at from message where chat_id = $1 and message_id = $2 and role != 'system'"
+	sqlSaveMessage     = "insert into message (chat_id, message_id, reply_id, message_text, role, image_file_id, created_at, updated_at) values (:chat_id, :message_id, :reply_id, :message_text, :role, :image_file_id, :created_at, :updated_at)"
 	sqlGetMessageChain = `
 	with recursive x as (
 		select
@@ -22,6 +21,7 @@ const (
 			reply_id,
 			message_text,
 			"role",
+			image_file_id,
 			created_at,
 			updated_at,
 			0 as depth
@@ -38,6 +38,7 @@ const (
 			m.reply_id,
 			m.message_text,
 			m."role",
+			m.image_file_id,
 			m.created_at,
 			m.updated_at,
 			x.depth + 1
@@ -58,6 +59,7 @@ const (
 			reply_id,
 			message_text,
 			"role",
+			image_file_id,
 			created_at,
 			updated_at
 		from x
@@ -90,14 +92,20 @@ func (rep *MessageDbRepository) GetMessageChain(ctx context.Context, chatId int6
 	if err != nil {
 		return messageChain, err
 	}
+	result := make([]*storage.Message, 0, len(messageChain))
 	for _, m := range messageChain {
 		decoded, err := storage.DecodeStoredText(m.Text, *rep.encryptService)
 		if err != nil {
 			return messageChain, err
 		}
+		// continuation chunks of a split reply have no text of their own
+		if decoded == "" && m.ImageFileId == nil {
+			continue
+		}
 		m.Text = decoded
+		result = append(result, m)
 	}
-	return messageChain, nil
+	return result, nil
 }
 
 func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error {
@@ -106,7 +114,15 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 	if reply := message.ReplyToMessage; reply != nil {
 		replyTo = int64(reply.MessageID)
 	}
-	encodedMessageText, err := rep.encryptService.Encrypt([]byte(message.Text))
+	text := message.Text
+	if text == "" {
+		text = message.Caption
+	}
+	var imageFileId *string
+	if fileId := imageFileID(message); fileId != "" {
+		imageFileId = &fileId
+	}
+	encodedMessageText, err := rep.encryptService.Encrypt([]byte(text))
 	if err != nil {
 		return fmt.Errorf("%w:%v", storage.ErrMessageNotEncoded, err)
 	}
@@ -117,6 +133,7 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 		RepyToTgMsgId: replyTo,
 		Text:          b64DecodedMessageText,
 		Role:          role,
+		ImageFileId:   imageFileId,
 		CreatedAt:     time.Now().Unix(),
 		UpdatedAt:     nil,
 	}
@@ -127,16 +144,22 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 	return nil
 }
 
-func (rep *MessageDbRepository) SaveMessages(ctx context.Context, messages []*tgbotapi.Message, role string) error {
-	var buffer bytes.Buffer
-
-	if len(messages) == 0 {
-		return nil
+// SaveMessages saves a reply sent as several telegram messages.
+// The first message holds the whole text: telegram returns sent messages without markup.
+// The following ones are saved without text, as replies to the previous chunk,
+// so replying to any chunk resolves to the same conversation.
+func (rep *MessageDbRepository) SaveMessages(ctx context.Context, messages []*tgbotapi.Message, text string, role string) error {
+	for i, m := range messages {
+		messageToSave := *m
+		messageToSave.Text = ""
+		if i == 0 {
+			messageToSave.Text = text
+		} else {
+			messageToSave.ReplyToMessage = &tgbotapi.Message{MessageID: messages[i-1].MessageID}
+		}
+		if err := rep.SaveMessage(ctx, &messageToSave, role); err != nil {
+			return err
+		}
 	}
-	for _, m := range messages {
-		buffer.WriteString(m.Text)
-	}
-	messageToSave := messages[0]
-	messageToSave.Text = buffer.String()
-	return rep.SaveMessage(ctx, messageToSave, role)
+	return nil
 }

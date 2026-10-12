@@ -78,3 +78,22 @@ func TestOpenrouterProviderSendsPromptAsSystemMessage(t *testing.T) {
 		t.Errorf("expected no system message for empty prompt, got %+v", got.Messages)
 	}
 }
+
+func TestOpenrouterProviderSendsTextWithImage(t *testing.T) {
+	var got map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&got)
+		w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"a cat"}}]}`))
+	}))
+	t.Cleanup(srv.Close)
+	provider := NewOpenrouterProvider(openrouter.NewOpenrouterClient(srv.URL, "test"), "")
+	image := "data:image/png;base64,AAAA"
+	messages := []CompletionRequestMessage{{Text: "what is it?", Role: "user", ImageUrl: &image}}
+	if _, err := provider.GetCompletionMessage(context.Background(), messages, "", config.ClaudeSonnet5); err != nil {
+		t.Fatal(err)
+	}
+	content := got["messages"].([]any)[0].(map[string]any)["content"].([]any)
+	if len(content) != 2 || content[0].(map[string]any)["text"] != "what is it?" || content[1].(map[string]any)["type"] != "image_url" {
+		t.Errorf("expected text and image parts, got %v", content)
+	}
+}
