@@ -3,7 +3,7 @@ package telegram
 import (
 	"amArbaoui/yaggptbot/app/config"
 	"amArbaoui/yaggptbot/app/storage"
-	"amArbaoui/yaggptbot/app/util"
+	"amArbaoui/yaggptbot/app/tgformat"
 	"context"
 	"log"
 
@@ -42,8 +42,8 @@ func (ms *MessageDbService) SaveMessage(ctx context.Context, message *tgbotapi.M
 	return ms.rep.SaveMessage(ctx, message, role)
 }
 
-func (ms *MessageDbService) SaveMessages(ctx context.Context, messages []*tgbotapi.Message, role string) error {
-	return ms.rep.SaveMessages(ctx, messages, role)
+func (ms *MessageDbService) SaveMessages(ctx context.Context, messages []*tgbotapi.Message, text string, role string) error {
+	return ms.rep.SaveMessages(ctx, messages, text, role)
 }
 
 type ChatServiceImpl struct {
@@ -55,7 +55,7 @@ func NewChatService(botApi *tgbotapi.BotAPI) *ChatServiceImpl {
 }
 
 func (ch *ChatServiceImpl) SendMessage(ctx context.Context, SendMsgRequest MessageOut) ([]*tgbotapi.Message, error) {
-	splitedText := util.SliceString(SendMsgRequest.Text, config.TelegramMessageLimit)
+	splitedText := tgformat.Render(SendMsgRequest.Text, config.TelegramMessageLimit)
 	sentMessages := make([]*tgbotapi.Message, 0, len(splitedText))
 	for _, m := range splitedText {
 		msg, err := ch.send(SendMsgRequest.ChatId, SendMsgRequest.RepyToId, m)
@@ -68,16 +68,16 @@ func (ch *ChatServiceImpl) SendMessage(ctx context.Context, SendMsgRequest Messa
 }
 
 func (ch *ChatServiceImpl) send(chatId int64, replyToId int64, text string) (*tgbotapi.Message, error) {
-	parseMode := tgbotapi.ModeMarkdown
 	msgConfig := tgbotapi.NewMessage(chatId, text)
 	if replyToId > 0 {
 		msgConfig.ReplyToMessageID = int(replyToId)
 	}
-	msgConfig.ParseMode = parseMode
+	msgConfig.ParseMode = tgbotapi.ModeHTML
 	msg, err := ch.botApi.Send(msgConfig)
 	if err != nil {
-		msgConfig.Text = tgbotapi.EscapeText(parseMode, text)
-		log.Println("failed to send original message, sending escaped version")
+		log.Printf("failed to send formatted message, sending plain text: %v", err)
+		msgConfig.Text = tgformat.Plain(text)
+		msgConfig.ParseMode = ""
 		msg, err = ch.botApi.Send(msgConfig)
 		if err != nil {
 			log.Println("failed to send message, error:", err)

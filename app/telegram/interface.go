@@ -17,7 +17,7 @@ type MessageService interface {
 	GetMessage(ctx context.Context, chatId int64, messageId int64) (*Message, error)
 	GetMessageChain(ctx context.Context, chatId int64, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
 	SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error
-	SaveMessages(ctx context.Context, messages []*tgbotapi.Message, role string) error
+	SaveMessages(ctx context.Context, messages []*tgbotapi.Message, text string, role string) error
 }
 
 type ChatService interface {
@@ -47,5 +47,5 @@ type MessageRepository interface {
 	GetMessageById(ctx context.Context, chatId int64, messageId int64) (*storage.Message, error)
 	GetMessageChain(ctx context.Context, chatId int64, topMessageId int64, maxConversationDepth int) ([]*storage.Message, error)
 	SaveMessage(ctx context.Context, message *tgbotapi.Message, role string) error
-	SaveMessages(ctx context.Context, messages []*tgbotapi.Message, role string) error
+	SaveMessages(ctx context.Context, messages []*tgbotapi.Message, text string, role string) error
 }

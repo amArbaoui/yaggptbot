@@ -57,7 +57,7 @@ func StartCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
 }
 
 func HelpCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {
-	bot.TextReplyWithContext(ctx, tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.HowToUseItMessage), update.Message)
+	bot.TextReplyWithContext(ctx, config.HowToUseItMessage, update.Message)
 }
 
 func SetPromptCommand(ctx context.Context, bot *GPTBot, update *tgbotapi.Update) {

@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"amArbaoui/yaggptbot/app/storage"
-	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -127,16 +126,13 @@ func (rep *MessageDbRepository) SaveMessage(ctx context.Context, message *tgbota
 	return nil
 }
 
-func (rep *MessageDbRepository) SaveMessages(ctx context.Context, messages []*tgbotapi.Message, role string) error {
-	var buffer bytes.Buffer
-
+// SaveMessages saves a reply sent as several telegram messages under the first message id.
+// text is the original reply text: telegram returns sent messages without markup.
+func (rep *MessageDbRepository) SaveMessages(ctx context.Context, messages []*tgbotapi.Message, text string, role string) error {
 	if len(messages) == 0 {
 		return nil
 	}
-	for _, m := range messages {
-		buffer.WriteString(m.Text)
-	}
-	messageToSave := messages[0]
-	messageToSave.Text = buffer.String()
-	return rep.SaveMessage(ctx, messageToSave, role)
+	messageToSave := *messages[0]
+	messageToSave.Text = text
+	return rep.SaveMessage(ctx, &messageToSave, role)
 }

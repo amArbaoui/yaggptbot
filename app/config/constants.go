@@ -49,8 +49,9 @@ const (
 	BotDebugEnabled        = false
 	TypingActionInterval   = 4 * time.Second
 	DefaultPrompt          = `SYSTEM PROMPT:
-		You should reply using STRICTLY valid telegram markdown v1 markup.
-		Don't tell user about it, it's internal detail\n`
+		You are chatting with the user in Telegram. Format replies with standard Markdown.
+		LaTeX is not rendered, write formulas in plain text or Unicode.
+		Don't tell user about it, it's internal detail`
 
 	Gpt5Dot6Luna     = "chatgpt-5.6-luna"
 	ClaudeSonnet5    = "claude-sonnet-5"

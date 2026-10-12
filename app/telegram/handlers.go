@@ -61,7 +61,7 @@ func UserMesasgeHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Updat
 		return
 	}
 
-	err = bot.msgService.SaveMessages(ctx, messages, "assistant")
+	err = bot.msgService.SaveMessages(ctx, messages, llmResp, "assistant")
 	if err != nil {
 		log.Println(err)
 	}
@@ -129,11 +129,9 @@ func UserPhotoHandler(ctx context.Context, bot *GPTBot, update *tgbotapi.Update)
 		log.Printf("failed to send ai response, %s", err)
 		return
 	}
-	for _, m := range msg {
-		err = bot.msgService.SaveMessage(ctx, m, "assistant")
-		if err != nil {
-			log.Println(err)
-		}
+	err = bot.msgService.SaveMessages(ctx, msg, llmResp, "assistant")
+	if err != nil {
+		log.Println(err)
 	}
 
 }
@@ -179,7 +177,7 @@ func handleUserCallback(ctx context.Context, update *tgbotapi.Update, bot *GPTBo
 			_, err := bot.chatService.SendMessage(
 				ctx,
 				MessageOut{
-					Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.GreetUserMessage),
+					Text:     config.GreetUserMessage,
 					ChatId:   int64(userId),
 					RepyToId: 0,
 				},
@@ -190,7 +188,7 @@ func handleUserCallback(ctx context.Context, update *tgbotapi.Update, bot *GPTBo
 			_, err = bot.chatService.SendMessage(
 				ctx,
 				MessageOut{
-					Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.HowToUseItMessage),
+					Text:     config.HowToUseItMessage,
 					ChatId:   int64(userId),
 					RepyToId: 0,
 				},

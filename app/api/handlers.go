@@ -12,8 +12,6 @@ import (
 	"net/http"
 	"strconv"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-
 	"github.com/go-chi/chi/v5"
 )
 
@@ -157,7 +155,7 @@ func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
 	_, err := usr.chatService.SendMessage(
 		ctx,
 		telegram.MessageOut{
-			Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.GreetUserMessage),
+			Text:     config.GreetUserMessage,
 			ChatId:   int64(newUserRequest.ChatId),
 			RepyToId: 0,
 		},
@@ -168,7 +166,7 @@ func (usr *UserHandler) greetUser(newUserRequest UserRequest) {
 	_, err = usr.chatService.SendMessage(
 		ctx,
 		telegram.MessageOut{
-			Text:     tgbotapi.EscapeText(tgbotapi.ModeMarkdown, config.HowToUseItMessage),
+			Text:     config.HowToUseItMessage,
 			ChatId:   int64(newUserRequest.ChatId),
 			RepyToId: 0,
 		},
