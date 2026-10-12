@@ -42,6 +42,13 @@ DEFAULT_PROMPT="new prompt" # this is optional
 ```
 Run docker compose up  
 
+### Docker image
+GitHub Actions run tests and build the image for every pull request.
+Pushes to master publish `ghcr.io/amarbaoui/yaggptbot/yaggptbot:master`, version tags publish the version and `latest`:
+```bash
+git tag v0.5.0 && git push origin v0.5.0
+```
+
 
 ## Version History
 * 0.5.0

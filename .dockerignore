@@ -1,1 +1,7 @@
 app/config/*.env
+app/.env
+app/db/*.db
+app/yaggptbot
+.git
+.github
+.claude
