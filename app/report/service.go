@@ -39,6 +39,7 @@ func (rs *ReportService) SendUsersReport() {
 	report, err := rs.UsersLastMessage()
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	rs.SendReport(report)
 }
@@ -49,6 +50,7 @@ func (rs *ReportService) SendDailyMessagesReport() {
 	report, err := rs.UserMessagesCount(after)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	rs.SendReport(report)
 }
@@ -58,6 +60,7 @@ func (rs *ReportService) SendWeeklyMessagesReport() {
 	report, err := rs.WeeklyMessagesCount(now)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	rs.SendReport(report)
 }
