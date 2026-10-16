@@ -8,7 +8,7 @@ import (
 
 const (
 	sqlUsersWithLastMessages = "select u.tg_username, max(m.created_at) as last_message from message m inner join user u on m.chat_id  = u.tg_chat_id group by u.tg_username order by u.tg_username COLLATE NOCASE"
-	sqlUsersMessagesAfter    = "select u.tg_username, count(1) as messages from message m inner join user u on m.chat_id  = u.tg_chat_id where role = 'user' and m.created_at  > :created_after group by u.tg_username  order by count(1);"
+	sqlUsersMessagesAfter    = "select u.tg_username, count(1) as messages from message m inner join user u on m.chat_id  = u.tg_chat_id where role = 'user' and m.created_at > $1 group by u.tg_username  order by count(1);"
 )
 
 type UserLastMessage struct {
